@@ -12,7 +12,8 @@ This is meant to be a backup for if the several decades old HVAC system to keep 
 
 ## Reading out content from UV-Eprom B2716-6
 
-Use the programmer [Relatively-Universal-ROM-Programmer](https://github.com/AndersBNielsen/Relatively-Universal-ROM-Programmer) and [firestarter](https://github.com/henols/firestarter)
+Use the programmer [Relatively-Universal-ROM-Programmer](https://github.com/AndersBNielsen/Relatively-Universal-ROM-Programmer) and [firestarter](https://github.com/henols/firestarter). Usefull information about comptible chips can be found from 
+[The Collector’s guide to Vintage Intel Microchips](https://deramp.com/downloads/mfe_archive/050-Component%20Specifications/Intel/VintageIntelMicrochipsRev4.pdf)
 
 * Program the eeprom [programmer](https://github.com/henols/firestarter)
 * First time "avrdude -c arduino -P /dev/ttyUSB0  -b 115200 -p atmega328p -D -U flash:w:firestarter_uno.hex:i"
@@ -26,3 +27,8 @@ Use the programmer [Relatively-Universal-ROM-Programmer](https://github.com/Ande
 | No       | Description | IC           |
 | ---      | ---         |---           |
 | U1       | EEPROM | [B2716-6](https://www.alldatasheet.com/datasheet-pdf/pdf/22809/STMICROELECTRONICS/M2716.html) |
+
+
+
+
+
