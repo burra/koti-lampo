@@ -10,7 +10,8 @@ This is meant to be a backup for if the several decades old HVAC system to keep 
 * Create drop in replacement in the cpu socket with e.g and ESP32
   
 
-## Reading out content from UV-Eprom B2716-6
+## UV-Eprom
+### Read from UV-Eprom B2716-6
 
 Use the programmer [Relatively-Universal-ROM-Programmer](https://github.com/AndersBNielsen/Relatively-Universal-ROM-Programmer) and [firestarter](https://github.com/henols/firestarter). Usefull information about comptible chips can be found from 
 [The Collector’s guide to Vintage Intel Microchips](https://deramp.com/downloads/mfe_archive/050-Component%20Specifications/Intel/VintageIntelMicrochipsRev4.pdf)
@@ -21,6 +22,22 @@ Use the programmer [Relatively-Universal-ROM-Programmer](https://github.com/Ande
 * Read out id from the EPROM  "firestarter id M2716" (firestarter does not have B2716 but M2716 version, but should be the same)
 * Read out data from the EPROM  "firestarter read M2716 chip1.hex"
 * Read out data from the EPROMS  "firestarter write M2716 chip1.hex"
+
+### Write to EEprom CAT28C16A
+
+```bash
+# Download and run the installer
+
+firestarter write CAT28C16A 3EF2H.bin
+firestarter verify CAT28C16A 3EF2H.bin
+
+firestarter write CAT28C16A A98EH.bin
+firestarter verify CAT28C16A A98EH.bin
+
+sudo chmod +x install_bjorn.sh && sudo ./install_bjorn.sh
+# Choose the choice 1 for automatic installation. It may take a while as a lot of packages and modules will be installed. You must reboot at the end.
+```
+
 
 
 ## Datasheets 
