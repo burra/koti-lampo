@@ -52,6 +52,7 @@ firestarter write CAT28C16A A98EH.bin
 firestarter verify CAT28C16A A98EH.bin
 ```
 
+## Disaseble with [ghidra](https://github.com/NationalSecurityAgency/ghidra)
 
 
 ## Datasheets 
