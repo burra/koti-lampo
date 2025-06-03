@@ -59,7 +59,7 @@ firestarter verify CAT28C16A A98EH.bin
 | Description | IC           |
 | ---         |---           |
 | EEPROM | [B2716-6](https://www.alldatasheet.com/datasheet-pdf/pdf/22809/STMICROELECTRONICS/M2716.html) |
-| CPU | P8035L - Can't find  |
+| CPU | [P8035L](https://en.wikipedia.org/wiki/Intel_MCS-48) |
 
 
 
