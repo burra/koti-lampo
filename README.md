@@ -40,6 +40,16 @@ firestarter read M2716 A98EH.bin
 firestarter verify M2716 A98EH.bin 
 ```
 
+### Find a compatible EEprom replacement
+As this chipset is not found easaly on the market one have to find an replacement that the read function is the same 
+
+```bash
+# Find the chipset or the one that is the same specification
+firestarter search 2716
+# This will give you and pinnout to compare the chipset you are thinking is possible replacement 
+firestarter info M2716
+```
+
 ### Clear EEprom and verify it's empty
 ```bash
 # Some EEprom support to be erased but I haven't find any 
@@ -49,6 +59,7 @@ dd if=/dev/zero bs=1 count=2048 | tr '\0' '\377' > empty.bin
 firestarter write CAT28C16A empty.bin
 firestarter verify CAT28C16A empty.bin
 ```
+
 ### Write to EEprom CAT28C16A
 
 ```bash
