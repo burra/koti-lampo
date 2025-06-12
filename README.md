@@ -50,6 +50,16 @@ firestarter search 2716
 firestarter info M2716
 ```
 
+### Clear EEprom and verify it's empty
+```bash
+# Some EEprom support to be erased but I haven't find any 
+# firestarter erase AM27C512
+# Create a emty file with 16k bits of data 
+dd if=/dev/zero bs=1 count=2048 | tr '\0' '\377' > empty.bin 
+firestarter write CAT28C16A empty.bin
+firestarter verify CAT28C16A empty.bin
+```
+
 ### Write to EEprom CAT28C16A
 
 ```bash
