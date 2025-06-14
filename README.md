@@ -74,6 +74,12 @@ firestarter verify CAT28C16A A98EH.bin
 
 ## Disassemble with [ghidra](https://github.com/NationalSecurityAgency/ghidra)
 
+Based on markings on the chipsets [bottom_pcb](pic/bottom_pcb.jpg)
+
+| Memory | Binary                        |
+| ---    |---                            |
+|0x000–0x7FF| [3EF2H.bin](bin/3EF2H.bin) |
+|0x800–0xFFF| [A98EH.bin](bin/A98EH.bin) |
 
 ## Datasheets 
 | Description | IC           |
