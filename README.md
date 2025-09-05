@@ -59,6 +59,18 @@ dd if=/dev/zero bs=1 count=2048 | tr '\0' '\377' > empty.bin
 firestarter write CAT28C16A empty.bin
 firestarter verify CAT28C16A empty.bin
 ```
+### Write UV-Eprom that is bigger 
+
+Happend to have laying arround from the past M2732AF6 so tried to program these also.   
+
+```bash
+# Make binary bigger so software don't complain
+dd if=/dev/zero bs=1 count=2048 | tr '\0' '\377' >> 3EF2H_32k.bin
+# Tune up voltage to max with turning potentiometer RV1 to 21V in my case 17.36v for max
+firestarter vpp #VPP: 17.36v, Internal VCC: 4.90v
+firestarter vpe #VPE: 22.10v, Internal VCC: 4.92v   
+firestarter -v write  --vpe-as-vpp M2732A 3EF2H_32k.bin
+```
 
 ### Write to EEprom CAT28C16A
 
