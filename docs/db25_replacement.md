@@ -118,3 +118,75 @@ the pinout table above completed first, then:
 Route B is the path the project README already aims at ("replace with a different
 cpu and motherboard" / "drop-in replacement in the cpu socket with e.g. an
 ESP32"). The only blocker is the physical pinout, which needs the meter.
+
+## Photo annotations & measurement worksheet (Route B prerequisite)
+
+What is visible in each photo and the exact probing to do. Record results in the
+DB25 and backend tables above. **Mains disconnected for all continuity steps.**
+
+### `pic/bottom_pcb.jpg` — CPU board, solder/component side
+Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic
+windowed), the 40-pin 8035, several DIP logic ICs, a bank of relays/optos on the
+right, two trimmer pots (top right), and the resonator/crystal. The DB25 is the
+only off-board connector on this side — every cable to the backend goes through
+it.
+
+Probe list:
+1. **Find DB25 pin 1.** Look for a `1` on the silkscreen or the shell key; D-sub
+   pin numbering runs along the two rows (13 + 12).
+2. **GND/0V pins:** beep from each DB25 pin to the board ground plane / the 8035
+   `Vss` pin (pin 20). Mark every pin that is continuous with GND — expect
+   several (signal returns).
+3. **Power pins:** beep each DB25 pin to the transformer secondary pads and to
+   the board `Vcc` rail. These are the supply feed from the backend transformer.
+4. **CPU port pins:** with one probe on each 8035 port pin, find which DB25 pin it
+   reaches (directly or through a driver). Map in this priority order, because the
+   firmware tells us what they are:
+   - 8035 `P7` latch outputs → relay drives (heat call / valve / pump).
+   - 8035 `P5` outputs → relay/channel group select.
+   - 8035 `P2[7:4]` → expander page strobes (`0x8F..0xEF`).
+   - 8035 `P1.5` → strobe/enable out; `P1.4` → busy/ready in.
+   - 8035 `INT` (pin 6) and `T0` (pin 1) → interrupt / boot-config lines.
+5. **Driver transistors:** where a DB25 pin does *not* go straight to a CPU pin,
+   trace it to a relay-driver transistor/opto and note which CPU port bit drives
+   that driver's base — that bit is the logical signal for the pin.
+
+### `pic/top_pcb.jpg` / `pic/front_open.jpg` — front panel board
+Visible: display LEDs and the user controls (`LÄMPÖTILAN SÄÄTÖ`, `KELLON ASETUS`,
+`YLÄRAJAT`, the day/time `LÄMPÖTILAN ALENNUSAJAT` setback switch matrix). This
+board is local to the head unit and connects to the CPU board by an internal
+ribbon, **not** through the DB25 — so for Route B it can be ignored (the ESP32
+gets its own UI). Note it here only to confirm none of these switch lines appear
+on the DB25.
+
+### `pic/backend_overview.jpg` — power cabinet overview
+Visible: contactors `PAK1`/`PAK2`, the mains transformer (right), terminal rails,
+and the cabling fan-out. Identify:
+- Which terminal block the head-unit DB25 cable lands on (the backend end of the
+  umbilical).
+- Transformer secondary voltage(s) feeding the head unit (measure AC at the
+  secondary with mains on, **caution**).
+- Which contactor coils (`PAK1`/`PAK2`) are switched by the relay-drive pins
+  found on the CPU board.
+
+### `pic/X10_X11_backend_1.jpg` / `..._2.jpg` — analog plug-in cards
+Visible: two edge-connector cards, **`X10 = AVM2`** and **`X11 = AVO2`**, plus the
+sensor cables hand-labelled **`TS` / `TT` / `TH`** and actuator terminals
+**`VA1` / `VA2` / `AE` / `LE`**. Do:
+1. Measure `TS`/`TT`/`TH` resistance at a known temperature (ice water + warm
+   water) to identify the sensor curve — NTC 10k, PT100/PT1000, or
+   Valmet-specific. Record two (temp, ohms) points per sensor.
+2. On the X10/X11 edge connectors, find power, ground, the analog signal pin(s),
+   and any digital strobe that ties back to a DB25 pin. Decide keep-vs-replace:
+   - **Keep:** ESP32 must reproduce whatever strobe/clock the cards expect.
+   - **Replace:** do the ADC (sensors) and analog/relay output on the ESP32 and
+     remove the cards.
+3. Trace `VA1`/`VA2`/`AE`/`LE` to the contactors/valves they switch and note the
+   coil voltage/current so the ESP32 relay board is rated correctly.
+
+### Minimal "first light" subset for Route B
+If a full 25-pin trace is too much up front, the smallest set to bring up an
+ESP32 prototype is: **power feed**, **GND**, the **relay-drive pins** (so it can
+switch heat/valve/pump), and the **TS/TT/TH sensor lines** (so it can read
+temperature). Strobes, the X10/X11 interface and the INT/zero-cross line can be
+characterised in a second pass once basic on/off control is proven.
