@@ -21,20 +21,39 @@ and the Ghidra cross-check. Confidence tags match that file.
 
 | 8035 signal | Role | Firmware reference | Confidence |
 | --- | --- | --- | --- |
-| `P2[7:4]` high nibble | Page / chip-select strobe to the 8243-style nibble expander. Constants `0x8F 0x9F 0xAF 0xCF 0xDF 0xEF`. | `expander_kick()` @ X0029 | LIKELY |
-| `P4..P7` (via 8243 expander) | Nibble I/O bus (`movd`/`anld`/`orld`). | port-init @ X000d | LIKELY |
-| `P7` latch | Relay output: heat call / valve / pump bits. Shadowed in `XRAM[0x15]`. | regulation pass @ X0224 | LIKELY |
+| `P2[7:4]` high nibble | Page / chip-select strobe to the **P8243** nibble expander. Constants `0x8F 0x9F 0xAF 0xCF 0xDF 0xEF`. | `expander_kick()` @ X0029 | SURE (P8243 confirmed by block schema) |
+| `P4..P7` (via P8243 expander) | Nibble I/O bus (`movd`/`anld`/`orld`). | port-init @ X000d | SURE (expander confirmed) |
+| `P7` latch | Relay output: heat call / valve / pump bits. Shadowed in `XRAM[0x15]`. Latched by the **MC14508B** dual 4-bit latch ("databus driver"). | regulation pass @ X0224 | LIKELY (latch part confirmed) |
 | `P5` | Relay/channel **group select** + per-channel writes. | scan/select @ ~X01xx | LIKELY |
 | `P6` | Expander output shadow (`XRAM[0xF8]`). | cold boot wipe | LIKELY |
 | `P1.5` (`0x20`) | Strobe / enable output (set/cleared around conversions). | @ X028x | LIKELY |
 | `P1.4` (`0x10`) | Input poll — ready / zero-cross / ADC-busy. | @ X028x wait loop | GUESS |
 | `T0` | Read once at boot — cold-boot detect / config jumper. | reset @ X0000 | LIKELY |
-| `INT` (external) | Interrupt line; ISR saves ACC + P2. Likely mains zero-cross / tick. | EXTIRQ | SURE (space), GUESS (source) |
+| `INT` (external) | Interrupt line; ISR saves ACC + P2. Mains zero-cross / tick, divided by the **MC14040B** counter and gated through the **MC14013B** flip-flops. | EXTIRQ | SURE (space), LIKELY (source, timing chain confirmed) |
 | `BUS`/P0 | Multiplexed data to expander/latches. | throughout | GUESS |
 
 Analog measurement & setpoints almost certainly route to the backend **X10
 (AVM2)** and **X11 (AVO2)** cards rather than to an on-board ADC; the head unit
 appears to deal in digital strobes + a busy/ready handshake.
+
+### Confirmation from the board block diagram (`Display blockschema.odg`)
+
+The hardware block schema corroborates the firmware-derived map (see the
+datasheet table in the root [`README.md`](../README.md)):
+
+- **P8243** — confirms the "8243-style nibble expander" inference on P4–P7.
+- **MC14508B** dual 4-bit latch / databus driver — the `P7` relay output latch.
+- **MC14040B** 12-bit counter + **MC14013B** D flip-flops — the timing divider and
+  the `INT`/zero-cross handshake.
+- **MC14012B** dual 4-input NAND — glue logic.
+- **4N26 optoisolators (transistor output)** — the lines crossing the DB25 to the
+  mains-side backend are **galvanically isolated**. For Route B this means an ESP32
+  can drive/read these lines at logic level *through optos*, and any replacement
+  must preserve that isolation barrier between the controller and mains side.
+- **VA2101 EEPROM** — non-volatile store on the head-unit board for user settings
+  (clock, the `LÄMPÖTILAN ALENNUSAJAT` setback schedule, setpoints). It is local to
+  the controller, **not** on the DB25, so Route B replaces it with the ESP32's own
+  flash/NVS — the only requirement is to persist the same settings.
 
 ## DB25 pinout — TO BE MEASURED
 
