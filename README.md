@@ -118,7 +118,35 @@ original ROM addresses.
 > Note: `d48` disassembles each 2k bank independently, so cross-bank `call`/`jmp`
 > targets in bank 1 show as `X0xxx` when they really live at `0x8xx`. For a
 > labelled 4k address space, load it into [ghidra](https://github.com/NationalSecurityAgency/ghidra)
-> with a third-party MCS-48 processor module.
+> (see below).
+
+## Disassemble with Ghidra
+
+Ghidra is free and ships the **8048 (MCS-48)** processor natively, so no
+third-party extension or Gradle build is required. Unlike `d48`, it keeps both
+banks in one 4k address space, so cross-bank `call`/`jmp` targets resolve to
+real `0x8xx` addresses.
+
+```bash
+# Install Ghidra (Arch/Manjaro)
+sudo pacman -S ghidra
+
+# Headless import + auto-analysis + decompile-to-C of both banks
+GHIDRA_INSTALL_DIR=/usr/share/ghidra ./ghidra/run_ghidra.sh
+```
+
+The script loads bank 0 alone and a combined 4k image (`3EF2H.bin` + `A98EH.bin`).
+The combined run is the useful one: bank 1 has no reset vector, so analysed in
+isolation the auto-analyzer finds no functions; loading both banks together lets
+analysis start at the reset vector and follow the `SEL MB1` cross-bank calls,
+recovering every function with real `0x8xx` addresses.
+
+Committed Ghidra C output and full workflow notes live in
+[`ghidra/`](ghidra/) (see [`ghidra/README.md`](ghidra/README.md)). The value is
+the **cross-check** against the hand reconstruction
+([`disasm/koti_lampo.c`](disasm/koti_lampo.c)): where the two disagree, one of
+them is wrong. Comparing the two is what surfaced the internal- vs
+external-RAM (`mov @r` vs `movx @r`) modelling fix in the reconstruction.
 
 ## Datasheets 
 | Description | IC           |
