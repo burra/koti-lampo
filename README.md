@@ -86,8 +86,39 @@ firestarter write CAT28C16A A98EH.bin
 firestarter verify CAT28C16A A98EH.bin
 ```
 
-## Disassemble with [ghidra](https://github.com/NationalSecurityAgency/ghidra)
+## Disassemble with d52
 
+The CPU is an Intel **P8035L** (MCS-48 family, the ROM-less 8048), so the ROM
+dumps contain MCS-48 machine code. [d52](https://aur.archlinux.org/packages/d52) ships
+`d48`, a dedicated 8048/8041 disassembler.
+
+```bash
+# On Manjaro / Arch (AUR)
+yay -S d52
+
+# Disassemble each 2k bank. -d adds address + raw bytes in the comment field.
+d48 -d -b 3EF2H.bin   # -> 3EF2H.d48
+d48 -d -b A98EH.bin   # -> A98EH.d48
+```
+
+Bank order (the two 2k ROMs make up the 8048's 4k program space, selected with
+`SEL MB0` / `SEL MB1`):
+
+| ROM | Bank | Range | Contents |
+| --- | --- | --- | --- |
+| `3EF2H.bin` | bank 0 | `0x000-0x7FF` | reset/interrupt vectors, port I/O, keypad/display scan, regulation logic |
+| `A98EH.bin` | bank 1 | `0x800-0xFFF` | multi-byte BCD math library + control state machine |
+
+`3EF2H` is bank 0 because it holds the reset vector at `0x000` and the
+external-interrupt vector (`jmp` at `0x003`). The disassemblies live in
+[`disasm/`](disasm/), alongside a hand-written C reconstruction
+([`disasm/koti_lampo.c`](disasm/koti_lampo.c)) that annotates the logic with the
+original ROM addresses.
+
+> Note: `d48` disassembles each 2k bank independently, so cross-bank `call`/`jmp`
+> targets in bank 1 show as `X0xxx` when they really live at `0x8xx`. For a
+> labelled 4k address space, load it into [ghidra](https://github.com/NationalSecurityAgency/ghidra)
+> with a third-party MCS-48 processor module.
 
 ## Datasheets 
 | Description | IC           |
