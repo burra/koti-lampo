@@ -4,8 +4,10 @@ This is meant to be a backup for if the several decades old HVAC system to keep 
 
 ## Hypothesis
 
-* Make backups of the 2st B2716-6 EEPROM's and write into 28C16 or 27C16 proms
-* Make pinout diagram of the connector on the back to make it possible to replace with a total different cpu and motherboard 
+* ~~Make backups of the 2st B2716-6 EEPROM's from the spare pcb and write into 28C16 or 27C16 proms~~
+  *  ~~Read out prom from the origial abd compare if they match in checksum, Yes they do~~
+  *  Disaseble the code from the proms ? 
+* Make pinout diagram of the DB25 connector on the back to make it possible to replace with a total different cpu and motherboard 
 * Draw Schema/PCB in order to be able to make a new PCB if the old ones can't be repaired any more 
 * Create drop in replacement in the cpu socket with e.g and ESP32
   
