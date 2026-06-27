@@ -23,21 +23,27 @@ sudo pacman -S ghidra
 GHIDRA_INSTALL_DIR=/usr/share/ghidra ./ghidra/run_ghidra.sh
 ```
 
-Output lands in `ghidra/out/` (git-ignored):
+Committed Ghidra C output lives in `ghidra/out/`:
 
-- `bank0_3EF2H.ghidra.c`
-- `bank1_A98EH.ghidra.c`
+- `bank0_3EF2H.ghidra.c` — bank 0 alone (35 functions)
+- `combined_4k.ghidra.c` — both banks loaded into one 4k space (70 functions)
 
-Compare those against the hand reconstruction in
+The **combined** file is the useful one: bank 1 has no reset vector, so analysed
+in isolation the auto-analyzer finds no functions. Loading both banks together
+lets analysis start at the reset vector and follow the `SEL MB1` cross-bank
+calls into bank 1, recovering every function with real `0x8xx` addresses.
+
+Compare against the hand reconstruction in
 [`../disasm/koti_lampo.c`](../disasm/koti_lampo.c).
 
 ## Files
 
-- `run_ghidra.sh` — locates `analyzeHeadless`, imports each bank with the
-  correct base address and the `8048:LE:16:default` language, runs analysis,
-  and invokes the decompiler post-script.
-- `DecompileToC.py` — Ghidra post-script that decompiles every discovered
-  function and writes the C to the given output file.
+- `run_ghidra.sh` — locates `analyzeHeadless`, imports bank 0 and a combined
+  4k image with the `8048:LE:16:default` language, runs analysis, and invokes
+  the decompiler post-script.
+- `DecompileToC.java` — Ghidra post-script that decompiles every discovered
+  function and writes the C to the given output file. (Java, not Python:
+  Ghidra 12 dropped Jython and only runs Python under PyGhidra.)
 
 ## Notes
 

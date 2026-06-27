@@ -53,13 +53,30 @@ analyze_bank () {
         -loader BinaryLoader \
         -loader-baseAddr "$base" \
         -scriptPath "$REPO/ghidra" \
-        -postScript DecompileToC.py "$OUT/$name.ghidra.c" \
+        -postScript DecompileToC.java "$OUT/$name.ghidra.c" \
         -overwrite \
         -deleteProject
 }
 
+# Per-bank runs. Note: bank 1 alone has no reset vector, so the auto-analyzer
+# discovers no functions in isolation - the combined run below is the useful one.
 analyze_bank 3EF2H.bin 0x0000 bank0_3EF2H
-analyze_bank A98EH.bin 0x0800 bank1_A98EH
+
+# Combined 4k image: bank 0 (0x000-0x7FF) followed by bank 1 (0x800-0xFFF).
+# Analysis starts at the reset vector and follows SEL MB1 calls into bank 1,
+# so cross-bank targets resolve and both banks' functions are recovered.
+COMBINED="$(mktemp -d)/combined_4k.bin"
+cat "$BIN/3EF2H.bin" "$BIN/A98EH.bin" > "$COMBINED"
+echo "=== combined_4k (3EF2H + A98EH @ 0x0000) ==="
+"$HEADLESS" "$PROJ" KotilampoGhidra \
+    -import "$COMBINED" \
+    -processor "$LANG" \
+    -loader BinaryLoader \
+    -loader-baseAddr 0x0000 \
+    -scriptPath "$REPO/ghidra" \
+    -postScript DecompileToC.java "$OUT/combined_4k.ghidra.c" \
+    -overwrite \
+    -deleteProject
 
 echo
 echo "Done. Ghidra C output in: $OUT/"
