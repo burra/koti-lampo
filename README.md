@@ -148,11 +148,21 @@ the **cross-check** against the hand reconstruction
 them is wrong. Comparing the two is what surfaced the internal- vs
 external-RAM (`mov @r` vs `movx @r`) modelling fix in the reconstruction.
 
-## Datasheets 
-| Description | IC           |
-| ---         |---           |
-| EEPROM | [B2716-6](https://www.alldatasheet.com/datasheet-pdf/pdf/22809/STMICROELECTRONICS/M2716.html) |
-| CPU | [P8035L](https://en.wikipedia.org/wiki/Intel_MCS-48) |
+## Datasheets
+
+Components below are taken from the `Display blockschema.odg` board block diagram.
+
+| Description | IC |
+| --- | --- |
+| EEPROM 16 Kbit (2K×8), UV-erasable | [B2716-6](https://www.alldatasheet.com/datasheet-pdf/pdf/22809/STMICROELECTRONICS/M2716.html) |
+| CPU, MCS-48 family (ROM-less 8048) | [P8035L](https://en.wikipedia.org/wiki/Intel_MCS-48) |
+| 8-bit I/O expander (DIP 24) | [P8243](https://www.alldatasheet.com/datasheet-pdf/pdf/164277/INTEL/P8243.html) |
+| Dual 4-input NAND gate (CMOS 4012) | [MC14012B](https://www.onsemi.com/pdf/datasheet/mc14012b-d.pdf) |
+| Dual type-D flip-flop (CMOS 4013) | [MC14013B](https://www.onsemi.com/pdf/datasheet/mc14013b-d.pdf) |
+| 12-bit binary counter (CMOS 4040) | [MC14040B](https://www.onsemi.com/pdf/datasheet/mc14040b-d.pdf) |
+| Dual 4-bit latch / databus driver (CMOS 4508) | [MC14508B](https://www.onsemi.com/pdf/datasheet/mc14508b-d.pdf) |
+| Optoisolator, transistor output | [4N26](https://www.onsemi.com/pdf/datasheet/4n26-d.pdf) |
+| EEPROM (non-volatile settings store) | VA2101 |
 
 
 
