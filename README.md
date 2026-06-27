@@ -5,15 +5,15 @@ This is meant to be a backup for if the several decades old HVAC system to keep 
 ## Hypothesis
 
 * ~~Make backups of the 2st B2716-6 EEPROM's from the spare pcb and write into 28C16 or 27C16 proms~~
-  *  ~~Read out prom from the origial abd compare if they match in checksum, Yes they do~~
-  *  Disaseble the code from the proms ? 
+  *  ~~Read out prom from the original and compare if they match in checksum, Yes they do~~
+  *  Disassemble the code from the proms ? 
 * Make pinout diagram of the DB25 connector on the back to make it possible to replace with a total different cpu and motherboard 
 * Draw Schema/PCB in order to be able to make a new PCB if the old ones can't be repaired any more 
 * Create drop in replacement in the cpu socket with e.g and ESP32
   
 
 ## UV-Eprom
-UV-Eproms start to be rare and expesive as they where released in the begining of 1980 and the intel series I could't find where to buy 
+UV-Eproms start to be rare and expensive as they where released in the beginning of 1980 and the intel series I couldn't find where to buy 
 
 * [Relatively-Universal-ROM-Programmer](https://github.com/AndersBNielsen/Relatively-Universal-ROM-Programmer)
 * [Software](https://github.com/henols/firestarter_app)
@@ -43,27 +43,27 @@ firestarter verify M2716 A98EH.bin
 ```
 
 ### Find a compatible EEprom replacement
-As this chipset is not found easaly on the market one have to find an replacement that the read function is the same 
+As this chipset is not found easily on the market one have to find a replacement that the read function is the same 
 
 ```bash
 # Find the chipset or the one that is the same specification
 firestarter search 2716
-# This will give you and pinnout to compare the chipset you are thinking is possible replacement 
+# This will give you and pinout to compare the chipset you are thinking is possible replacement 
 firestarter info M2716
 ```
 
 ### Clear EEprom and verify it's empty
 ```bash
-# Some EEprom support to be erased but I haven't find any 
+# Some EEprom support to be erased but I haven't found any 
 # firestarter erase AM27C512
-# Create a emty file with 16k bits of data 
+# Create a empty file with 16k bits of data 
 dd if=/dev/zero bs=1 count=2048 | tr '\0' '\377' > empty.bin 
 firestarter write CAT28C16A empty.bin
 firestarter verify CAT28C16A empty.bin
 ```
 ### Write UV-Eprom that is bigger 
 
-Happend to have laying arround from the past M2732AF6 so tried to program these also.   
+Happened to have lying around from the past M2732AF6 so tried to program these also.   
 
 ```bash
 # Make binary bigger so software don't complain
@@ -86,7 +86,7 @@ firestarter write CAT28C16A A98EH.bin
 firestarter verify CAT28C16A A98EH.bin
 ```
 
-## Disasmeble with [ghidra](https://github.com/NationalSecurityAgency/ghidra)
+## Disassemble with [ghidra](https://github.com/NationalSecurityAgency/ghidra)
 
 
 ## Datasheets 
