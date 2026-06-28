@@ -177,15 +177,19 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 
 ### Backend terminal map — TO BE MEASURED
 
-| Label | Type (guess) | Function | Notes |
+Sensor types are no longer a question: `IO list.ods` confirms **all six
+temperature sensors are PT100** (`TE_101..TE_204`). What still needs the meter
+is the *pinout* — which DB25 pin each lands on — not the sensor technology.
+
+| Label | Type | Function | Notes |
 | --- | --- | --- | --- |
-| `TS` | NTC/PT sensor? | Temperature sensor | Identify resistance curve |
-| `TT` | NTC/PT sensor? | Temperature sensor |  |
-| `TH` | NTC/PT sensor? | Temperature sensor |  |
-| `VA1` | Actuator | Motor valve / pump |  |
-| `VA2` | Actuator | Motor valve / pump |  |
-| `AE` | ? |  |  |
-| `LE` | ? |  |  |
+| `TS` | **PT100** | Tank water temperature (`TE_204`) | ~100 Ω @ 0 °C, ~138.5 Ω @ 100 °C |
+| `TT` | **PT100** | Temperature sensor (one of `TE_101..TE_203`) | PT100 per I/O list |
+| `TH` | **PT100** | Inside/room temperature (`TE_101`) | PT100 per I/O list |
+| `VA1` | Actuator | Solenoid valve 24 VDC (`CV_101`) |  |
+| `VA2` | Actuator | Solenoid valve 24 VDC (`CV_102`) |  |
+| `AE` | Pulse out | Solar-energy pulse train (`ST_201`) |  |
+| `LE` | Pulse out | Consumed-energy pulse train (`ST_202`) |  |
 | `X10` | Edge card | AVM2 (analog measure?) | Reverse the card's I/O |
 | `X11` | Edge card | AVO2 (analog out?) |  |
 
@@ -195,8 +199,9 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
    shell or silkscreen).
 2. Continuity from each DB25 pin to: every 8035 port pin, each relay-driver
    transistor collector/base, transformer secondary, and GND/0V plane.
-3. Note resistance of `TS`/`TT`/`TH` at known temperatures to identify the sensor
-   type (NTC 10k? PT100/PT1000? Valmet-specific?).
+3. Sensors are **PT100** (confirmed by `IO list.ods`); no need to identify the
+   curve. Just verify ~100 Ω near 0 °C to confirm wiring/probe before tracing
+   each sensor line to its DB25 pin.
 4. With mains on **and** appropriate caution, scope the `INT` candidate pin to
    confirm 50 Hz zero-cross, and the `P1.4` pin for the busy/ready handshake.
 
@@ -278,9 +283,10 @@ and the cabling fan-out. Identify:
 Visible: two edge-connector cards, **`X10 = AVM2`** and **`X11 = AVO2`**, plus the
 sensor cables hand-labelled **`TS` / `TT` / `TH`** and actuator terminals
 **`VA1` / `VA2` / `AE` / `LE`**. Do:
-1. Measure `TS`/`TT`/`TH` resistance at a known temperature (ice water + warm
-   water) to identify the sensor curve — NTC 10k, PT100/PT1000, or
-   Valmet-specific. Record two (temp, ohms) points per sensor.
+1. Sensors are **PT100** (per `IO list.ods`). Optionally spot-check resistance
+   in ice water (~100 Ω @ 0 °C) to confirm the probe/wiring before wiring up the
+   ESP32 front end (PT100 needs a precision current source / divider + amp, not
+   the simple divider an NTC would use).
 2. On the X10/X11 edge connectors, find power, ground, the analog signal pin(s),
    and any digital strobe that ties back to a DB25 pin. Decide keep-vs-replace:
    - **Keep:** ESP32 must reproduce whatever strobe/clock the cards expect.
