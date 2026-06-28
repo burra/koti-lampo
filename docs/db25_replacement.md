@@ -1,0 +1,303 @@
+# DB25 connector & modern-replacement notes
+
+The Valmet Kotilämpö is split into two physically separate halves joined by a
+single multi-conductor cable terminated in a **DB25 D-sub** ("printer"-style)
+connector. This is **not** a printer port — it is the proprietary I/O harness
+that carries power, sensor and actuator signals between the two halves.
+
+| Half | Where | Contents |
+| --- | --- | --- |
+| **Head unit** ("the computer") | `pic/front*`, `pic/top_pcb.jpg`, `pic/bottom_pcb.jpg` | Front panel (display LEDs + settings switches: `LÄMPÖTILAN SÄÄTÖ`, `KELLON ASETUS`, `YLÄRAJAT`, the day/time `LÄMPÖTILAN ALENNUSAJAT` setback matrix) and the CPU board (8035, two EPROMs, glue logic, opto/relay drivers, trimmers, resonator). The **DB25 is on the left edge of `bottom_pcb.jpg`.** |
+| **Backend cabinet** (inside the heating unit) | `pic/backend_overview.jpg`, `pic/X10_X11_backend_*.jpg` | Power contactors `PAK1`/`PAK2`, mains transformer, terminal rails, sensor cables labelled `TS`/`TT`/`TH`, actuator terminals `VA1`/`VA2`/`AE`/`LE`, and two plug-in analog cards on edge connectors: `X10 = AVM2`, `X11 = AVO2`. |
+
+So the DB25 carries: transformer power in, the relay/expander drive lines plus
+their strobes, the interrupt/timing line, and the analog sensor/setpoint signals
+to and from the X10/X11 cards.
+
+## Firmware-side signal map (what the 8035 drives across the cable)
+
+Derived from the reconstruction in [`../disasm/koti_lampo.c`](../disasm/koti_lampo.c)
+and the Ghidra cross-check. Confidence tags match that file.
+
+| 8035 signal | Role | Firmware reference | Confidence |
+| --- | --- | --- | --- |
+| `P2[7:4]` high nibble | Page / chip-select strobe to the **P8243** nibble expander. Constants `0x8F 0x9F 0xAF 0xCF 0xDF 0xEF`. | `expander_kick()` @ X0029 | SURE (P8243 confirmed by block schema) |
+| `P4..P7` (via P8243 expander) | Nibble I/O bus (`movd`/`anld`/`orld`). | port-init @ X000d | SURE (expander confirmed) |
+| `P7` latch | Relay output: heat call / valve / pump bits. Shadowed in `XRAM[0x15]`. Latched by the **MC14508B** dual 4-bit latch ("databus driver"). | regulation pass @ X0224 | LIKELY (latch part confirmed) |
+| `P5` | Relay/channel **group select** + per-channel writes. | scan/select @ ~X01xx | LIKELY |
+| `P6` | Expander output shadow (`XRAM[0xF8]`). | cold boot wipe | LIKELY |
+| `P1.5` (`0x20`) | Strobe / enable output (set/cleared around conversions). | @ X028x | LIKELY |
+| `P1.4` (`0x10`) | Input poll — ready / zero-cross / ADC-busy. | @ X028x wait loop | GUESS |
+| `T0` | Read once at boot — cold-boot detect / config jumper. | reset @ X0000 | LIKELY |
+| `INT` (external) | Interrupt line; ISR saves ACC + P2. Mains zero-cross / tick, divided by the **MC14040B** counter and gated through the **MC14013B** flip-flops. | EXTIRQ | SURE (space), LIKELY (source, timing chain confirmed) |
+| `BUS`/P0 | Multiplexed data to expander/latches. | throughout | GUESS |
+
+Analog measurement & setpoints almost certainly route to the backend **X10
+(AVM2)** and **X11 (AVO2)** cards rather than to an on-board ADC; the head unit
+appears to deal in digital strobes + a busy/ready handshake.
+
+### Confirmation from the board block diagram (`Display blockschema.odg`)
+
+The hardware block schema corroborates the firmware-derived map (see the
+datasheet table in the root [`README.md`](../README.md)):
+
+- **P8243** — confirms the "8243-style nibble expander" inference on P4–P7.
+- **MC14508B** dual 4-bit latch / databus driver — the `P7` relay output latch.
+- **MC14040B** 12-bit counter + **MC14013B** D flip-flops — the timing divider and
+  the `INT`/zero-cross handshake.
+- **MC14012B** dual 4-input NAND — glue logic.
+- **4N26 optoisolators (transistor output)** — the lines crossing the DB25 to the
+  mains-side backend are **galvanically isolated**. For Route B this means an ESP32
+  can drive/read these lines at logic level *through optos*, and any replacement
+  must preserve that isolation barrier between the controller and mains side.
+- **VA2101 EEPROM** — non-volatile store on the head-unit board for user settings
+  (clock, the `LÄMPÖTILAN ALENNUSAJAT` setback schedule, setpoints). It is local to
+  the controller, **not** on the DB25, so Route B replaces it with the ESP32's own
+  flash/NVS — the only requirement is to persist the same settings.
+
+## Canonical I/O list (`IO list.ods`)
+
+The repo-root spreadsheet [`IO list.ods`](../IO%20list.ods) is a clean,
+tag-based I/O inventory that maps one-to-one onto the firmware/manual signal
+names. This is the authoritative signal count for a Route B (ESP32) rebuild.
+
+| Tag | Type | Info | = firmware/manual name |
+| --- | --- | --- | --- |
+| `TE_101` | PT100 (in) | inside temperature | `TH` |
+| `TE_102` | PT100 (in) | sun-panel temperature | `TAK` |
+| `TE_201` | PT100 (in) | water temp before battery | `THM` (heating supply) |
+| `TE_202` | PT100 (in) | water temp after battery | `TAM` (heating return) |
+| `TE_203` | PT100 (in) | water temp after sun-panel battery | `TAP` |
+| `TE_204` | PT100 (in) | tank water temperature | `TS` |
+| `ST_101` | FDI (pulse in) | water circulation | `VM` (heating flow) |
+| `ST_102` | FDI (pulse in) | hot-water circulation | `LVM` (DHW flow) — **not in use** |
+| `CV_101` | DO | magnet valve 24 VDC | `VA1` |
+| `CV_102` | DO | magnet valve 24 VDC | `VA2` |
+| `CV_201` | DO | relay, extra heat | aux-heat (`LL`) |
+| `CV_301` | DO | 3-way valve 230 VAC | `VH` |
+| `CV_401` | DO | sun-panel circulation fan | `PAK` |
+| `CV_501` | DO | ventilation valve motor 230 VAC | `PM1` |
+| `CV_502` | DO | ventilation valve motor 230 VAC | `PM2` |
+| `CV_601` | DO | circulation pump 230 VAC | `VP` |
+| `ST_201` | FDO (pulse out) | pulse train, sun energy | `AE` |
+| `ST_202` | FDO (pulse out) | pulse train, consumed energy | `LE` |
+
+**I/O budget for the ESP32:** 6× PT100 inputs, 2× flow-pulse inputs (1 unused),
+8× digital outputs (2× 24 VDC solenoid, 6× 230 VAC via contactor/relay), 2×
+pulse outputs.
+
+Front-panel display selector (counter/memory items, recalled with the front
+button): clock; 1 inside temp; 2 sun-panel temp; 3 water temp riser to battery;
+4 water temp after battery; 5 water temp after sun-panel battery; 6 tank temp;
+7 consumed energy kWh; 8 solar energy kWh; 9 consumed hot water m³; 0 circulated
+heating water m³.
+
+## DB25 pinout — TO BE MEASURED
+
+Cannot be read from the photos. Fill this in with a multimeter: probe each DB25
+pin on `bottom_pcb`, trace to a CPU port pin / driver transistor / transformer
+tap / GND, then match to the firmware signal above.
+
+**Known signal inventory (from `Kotilämpö_vuokaaviot.pdf`, KUVA 11).** That
+schematic draws the DB25 explicitly; its legend decodes every line on the cable.
+The DB25 must therefore carry some subset of these — use it as the candidate list
+when tracing. See [`flowcharts_en.md`](flowcharts_en.md) for full definitions.
+
+Sensors (inputs): `TH` room, `TAK` solar collector, `THM` heating supply, `TAM`
+solar-exchanger supply, `TAP` return, `TS` storage tank, `VM` heating flow,
+`LVM` DHW flow.
+
+Actuators (outputs): `VA1`/`VA2` solenoid valves, `VH` 3-way mixing valve,
+`VP` circulation pump, `PM1`/`PM2` damper motors, `PAK I`/`PAK II` solar-fan
+contactor (2 stages), `VPK` pump contactor; plus `AE`/`LE` energy-pulse outputs to
+the remote display.
+
+Power: mains feed is `1~ 220 V, 10 A` via a `T 6.3 A` slow fuse + transformer on
+the backend side (KUVA 6 / KUVA 11). The umbilical is Valmet-supplied cable in a
+Ø50 conduit, **7 m max**.
+
+**Confirmed signal subset (from the service test box, `Kotilämpö_toiminta_ja_käyttö.pdf`
+appendix).** The factory **test box connects between the control unit and the
+power-supply unit** on the existing cable — i.e. it physically taps this exact
+interface. Its LEDs/buttons are therefore an *authoritative* list of what crosses
+the link (stronger than the KUVA 11 candidate list, which includes backend-only
+nets). See [`toiminta_ja_kaytto_en.md`](toiminta_ja_kaytto_en.md).
+
+- **Sensor measurements (control unit ← power-supply AVM card):** `REF`
+  (automation's own reference resistor), `TH`, `TAK`, `THM`, `TAM`, `TAP`, `TS`.
+  Measured **sequentially** — REF first, then each sensor at a "low" and "high"
+  end, the step encoded on LEDs `A1..A4`; a failing sensor is retried up to 3×,
+  else the old reading is kept. This confirms the firmware map's
+  *digital-strobe + busy/ready handshake* picture (`P1.5` strobe, `P1.4` ready):
+  there is no parallel ADC, just one multiplexed resistance-measuring channel.
+- **Sensors are resistive** — test resistors substitute for them directly
+  (glossary: Pt100). `REF` is an on-board reference resistor for ratiometric
+  measurement. Useful calibration points: `TSTAV` defaults to **60 °C**, testable
+  with **52 °C / 70 °C** test resistors.
+- **Actuator drives (control unit → power-supply):** `VA` (= `VA1`), `VH`,
+  `PAK I`, `PAK II` — each LED lights when that actuator is being driven. (VA2 is
+  the de-energised complement of VA1, so it need not be a separate line.)
+- **Status / metering outputs:** `LL` (aux-heat on), `LE` / `AE` (blink once per
+  energy kWh).
+- **Flow-pulse inputs (→ control unit):** `VM`, `LVM` — the box can inject pulses
+  to verify the control unit counts them.
+
+Net effect for the pinout trace: the DB25 must carry power + GND, **7 resistive
+sensor lines on one multiplexed measuring channel** (TH, TAK, THM, TAM, TAP, TS,
+plus the REF reference), the strobe/ready handshake pair, the actuator drives
+(VA1, VH, PAK I, PAK II), the LL/LE/AE status lines, and the VM/LVM pulse inputs.
+
+| DB25 pin | Traced to (head-unit net) | Backend function | Firmware signal | Notes |
+| --- | --- | --- | --- | --- |
+| 1 |  |  |  |  |
+| 2 |  |  |  |  |
+| 3 |  |  |  |  |
+| 4 |  |  |  |  |
+| 5 |  |  |  |  |
+| 6 |  |  |  |  |
+| 7 |  |  |  |  |
+| 8 |  |  |  |  |
+| 9 |  |  |  |  |
+| 10 |  |  |  |  |
+| 11 |  |  |  |  |
+| 12 |  |  |  |  |
+| 13 |  |  |  |  |
+| 14 |  |  |  |  |
+| 15 |  |  |  |  |
+| 16 |  |  |  |  |
+| 17 |  |  |  |  |
+| 18 |  |  |  |  |
+| 19 |  |  |  |  |
+| 20 |  |  |  |  |
+| 21 |  |  |  |  |
+| 22 |  |  |  |  |
+| 23 |  |  |  |  |
+| 24 |  |  |  |  |
+| 25 |  |  |  |  |
+
+### Backend terminal map — TO BE MEASURED
+
+Sensor types are no longer a question: `IO list.ods` confirms **all six
+temperature sensors are PT100** (`TE_101..TE_204`). What still needs the meter
+is the *pinout* — which DB25 pin each lands on — not the sensor technology.
+
+| Label | Type | Function | Notes |
+| --- | --- | --- | --- |
+| `TS` | **PT100** | Tank water temperature (`TE_204`) | ~100 Ω @ 0 °C, ~138.5 Ω @ 100 °C |
+| `TT` | **PT100** | Temperature sensor (one of `TE_101..TE_203`) | PT100 per I/O list |
+| `TH` | **PT100** | Inside/room temperature (`TE_101`) | PT100 per I/O list |
+| `VA1` | Actuator | Solenoid valve 24 VDC (`CV_101`) |  |
+| `VA2` | Actuator | Solenoid valve 24 VDC (`CV_102`) |  |
+| `AE` | Pulse out | Solar-energy pulse train (`ST_201`) |  |
+| `LE` | Pulse out | Consumed-energy pulse train (`ST_202`) |  |
+| `X10` | Edge card | AVM2 (analog measure?) | Reverse the card's I/O |
+| `X11` | Edge card | AVO2 (analog out?) |  |
+
+### How to take the measurements
+
+1. Power **off**, mains disconnected. Identify DB25 pin 1 (usually marked on the
+   shell or silkscreen).
+2. Continuity from each DB25 pin to: every 8035 port pin, each relay-driver
+   transistor collector/base, transformer secondary, and GND/0V plane.
+3. Sensors are **PT100** (confirmed by `IO list.ods`); no need to identify the
+   curve. Just verify ~100 Ω near 0 °C to confirm wiring/probe before tracing
+   each sensor line to its DB25 pin.
+4. With mains on **and** appropriate caution, scope the `INT` candidate pin to
+   confirm 50 Hz zero-cross, and the `P1.4` pin for the busy/ready handshake.
+
+## Replacement options
+
+### Route A — CPU-socket drop-in (hard)
+Replace the 8035 in its socket with an ESP32/RP2040 adapter that bit-bangs the
+MCS-48 bus to the *original* CPU board. Keeps DB25 + backend untouched, but
+requires faithful emulation of 8035 port/bus timing. High effort, little payoff.
+
+### Route B — new head unit over the DB25 (recommended)
+Don't emulate the CPU. Because the control logic is now reconstructed in
+[`../disasm/koti_lampo.c`](../disasm/koti_lampo.c), reimplement it on an ESP32 and
+drive the *same* contactors / valves / sensors directly through the DB25. Needs
+the pinout table above completed first, then:
+
+- ESP32 GPIO → relay drivers for `VA1`/`VA2` (and the `P7` heat/valve/pump bits).
+- ESP32 ADC (or an external ADC) → `TS`/`TT`/`TH` after identifying the sensor
+  curve and adding the right divider/reference.
+- Decide whether to keep or replace the X10/X11 analog cards — if kept, the ESP32
+  must speak their interface; if replaced, do measurement/output on the ESP32.
+- Reproduce the setback schedule + setpoint logic from the disassembly.
+
+Route B is the path the project README already aims at ("replace with a different
+cpu and motherboard" / "drop-in replacement in the cpu socket with e.g. an
+ESP32"). The only blocker is the physical pinout, which needs the meter.
+
+## Photo annotations & measurement worksheet (Route B prerequisite)
+
+What is visible in each photo and the exact probing to do. Record results in the
+DB25 and backend tables above. **Mains disconnected for all continuity steps.**
+
+### `pic/bottom_pcb.jpg` — CPU board, solder/component side
+Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic
+windowed), the 40-pin 8035, several DIP logic ICs, a bank of relays/optos on the
+right, two trimmer pots (top right), and the resonator/crystal. The DB25 is the
+only off-board connector on this side — every cable to the backend goes through
+it.
+
+Probe list:
+1. **Find DB25 pin 1.** Look for a `1` on the silkscreen or the shell key; D-sub
+   pin numbering runs along the two rows (13 + 12).
+2. **GND/0V pins:** beep from each DB25 pin to the board ground plane / the 8035
+   `Vss` pin (pin 20). Mark every pin that is continuous with GND — expect
+   several (signal returns).
+3. **Power pins:** beep each DB25 pin to the transformer secondary pads and to
+   the board `Vcc` rail. These are the supply feed from the backend transformer.
+4. **CPU port pins:** with one probe on each 8035 port pin, find which DB25 pin it
+   reaches (directly or through a driver). Map in this priority order, because the
+   firmware tells us what they are:
+   - 8035 `P7` latch outputs → relay drives (heat call / valve / pump).
+   - 8035 `P5` outputs → relay/channel group select.
+   - 8035 `P2[7:4]` → expander page strobes (`0x8F..0xEF`).
+   - 8035 `P1.5` → strobe/enable out; `P1.4` → busy/ready in.
+   - 8035 `INT` (pin 6) and `T0` (pin 1) → interrupt / boot-config lines.
+5. **Driver transistors:** where a DB25 pin does *not* go straight to a CPU pin,
+   trace it to a relay-driver transistor/opto and note which CPU port bit drives
+   that driver's base — that bit is the logical signal for the pin.
+
+### `pic/top_pcb.jpg` / `pic/front_open.jpg` — front panel board
+Visible: display LEDs and the user controls (`LÄMPÖTILAN SÄÄTÖ`, `KELLON ASETUS`,
+`YLÄRAJAT`, the day/time `LÄMPÖTILAN ALENNUSAJAT` setback switch matrix). This
+board is local to the head unit and connects to the CPU board by an internal
+ribbon, **not** through the DB25 — so for Route B it can be ignored (the ESP32
+gets its own UI). Note it here only to confirm none of these switch lines appear
+on the DB25.
+
+### `pic/backend_overview.jpg` — power cabinet overview
+Visible: contactors `PAK1`/`PAK2`, the mains transformer (right), terminal rails,
+and the cabling fan-out. Identify:
+- Which terminal block the head-unit DB25 cable lands on (the backend end of the
+  umbilical).
+- Transformer secondary voltage(s) feeding the head unit (measure AC at the
+  secondary with mains on, **caution**).
+- Which contactor coils (`PAK1`/`PAK2`) are switched by the relay-drive pins
+  found on the CPU board.
+
+### `pic/X10_X11_backend_1.jpg` / `..._2.jpg` — analog plug-in cards
+Visible: two edge-connector cards, **`X10 = AVM2`** and **`X11 = AVO2`**, plus the
+sensor cables hand-labelled **`TS` / `TT` / `TH`** and actuator terminals
+**`VA1` / `VA2` / `AE` / `LE`**. Do:
+1. Sensors are **PT100** (per `IO list.ods`). Optionally spot-check resistance
+   in ice water (~100 Ω @ 0 °C) to confirm the probe/wiring before wiring up the
+   ESP32 front end (PT100 needs a precision current source / divider + amp, not
+   the simple divider an NTC would use).
+2. On the X10/X11 edge connectors, find power, ground, the analog signal pin(s),
+   and any digital strobe that ties back to a DB25 pin. Decide keep-vs-replace:
+   - **Keep:** ESP32 must reproduce whatever strobe/clock the cards expect.
+   - **Replace:** do the ADC (sensors) and analog/relay output on the ESP32 and
+     remove the cards.
+3. Trace `VA1`/`VA2`/`AE`/`LE` to the contactors/valves they switch and note the
+   coil voltage/current so the ESP32 relay board is rated correctly.
+
+### Minimal "first light" subset for Route B
+If a full 25-pin trace is too much up front, the smallest set to bring up an
+ESP32 prototype is: **power feed**, **GND**, the **relay-drive pins** (so it can
+switch heat/valve/pump), and the **TS/TT/TH sensor lines** (so it can read
+temperature). Strobes, the X10/X11 interface and the INT/zero-cross line can be
+characterised in a second pass once basic on/off control is proven.
