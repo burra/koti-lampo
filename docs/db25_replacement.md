@@ -55,6 +55,43 @@ datasheet table in the root [`README.md`](../README.md)):
   the controller, **not** on the DB25, so Route B replaces it with the ESP32's own
   flash/NVS — the only requirement is to persist the same settings.
 
+## Canonical I/O list (`IO list.ods`)
+
+The repo-root spreadsheet [`IO list.ods`](../IO%20list.ods) is a clean,
+tag-based I/O inventory that maps one-to-one onto the firmware/manual signal
+names. This is the authoritative signal count for a Route B (ESP32) rebuild.
+
+| Tag | Type | Info | = firmware/manual name |
+| --- | --- | --- | --- |
+| `TE_101` | PT100 (in) | inside temperature | `TH` |
+| `TE_102` | PT100 (in) | sun-panel temperature | `TAK` |
+| `TE_201` | PT100 (in) | water temp before battery | `THM` (heating supply) |
+| `TE_202` | PT100 (in) | water temp after battery | `TAM` (heating return) |
+| `TE_203` | PT100 (in) | water temp after sun-panel battery | `TAP` |
+| `TE_204` | PT100 (in) | tank water temperature | `TS` |
+| `ST_101` | FDI (pulse in) | water circulation | `VM` (heating flow) |
+| `ST_102` | FDI (pulse in) | hot-water circulation | `LVM` (DHW flow) — **not in use** |
+| `CV_101` | DO | magnet valve 24 VDC | `VA1` |
+| `CV_102` | DO | magnet valve 24 VDC | `VA2` |
+| `CV_201` | DO | relay, extra heat | aux-heat (`LL`) |
+| `CV_301` | DO | 3-way valve 230 VAC | `VH` |
+| `CV_401` | DO | sun-panel circulation fan | `PAK` |
+| `CV_501` | DO | ventilation valve motor 230 VAC | `PM1` |
+| `CV_502` | DO | ventilation valve motor 230 VAC | `PM2` |
+| `CV_601` | DO | circulation pump 230 VAC | `VP` |
+| `ST_201` | FDO (pulse out) | pulse train, sun energy | `AE` |
+| `ST_202` | FDO (pulse out) | pulse train, consumed energy | `LE` |
+
+**I/O budget for the ESP32:** 6× PT100 inputs, 2× flow-pulse inputs (1 unused),
+8× digital outputs (2× 24 VDC solenoid, 6× 230 VAC via contactor/relay), 2×
+pulse outputs.
+
+Front-panel display selector (counter/memory items, recalled with the front
+button): clock; 1 inside temp; 2 sun-panel temp; 3 water temp riser to battery;
+4 water temp after battery; 5 water temp after sun-panel battery; 6 tank temp;
+7 consumed energy kWh; 8 solar energy kWh; 9 consumed hot water m³; 0 circulated
+heating water m³.
+
 ## DB25 pinout — TO BE MEASURED
 
 Cannot be read from the photos. Fill this in with a multimeter: probe each DB25
@@ -78,6 +115,37 @@ the remote display.
 Power: mains feed is `1~ 220 V, 10 A` via a `T 6.3 A` slow fuse + transformer on
 the backend side (KUVA 6 / KUVA 11). The umbilical is Valmet-supplied cable in a
 Ø50 conduit, **7 m max**.
+
+**Confirmed signal subset (from the service test box, `Kotilämpö_toiminta_ja_käyttö.pdf`
+appendix).** The factory **test box connects between the control unit and the
+power-supply unit** on the existing cable — i.e. it physically taps this exact
+interface. Its LEDs/buttons are therefore an *authoritative* list of what crosses
+the link (stronger than the KUVA 11 candidate list, which includes backend-only
+nets). See [`toiminta_ja_kaytto_en.md`](toiminta_ja_kaytto_en.md).
+
+- **Sensor measurements (control unit ← power-supply AVM card):** `REF`
+  (automation's own reference resistor), `TH`, `TAK`, `THM`, `TAM`, `TAP`, `TS`.
+  Measured **sequentially** — REF first, then each sensor at a "low" and "high"
+  end, the step encoded on LEDs `A1..A4`; a failing sensor is retried up to 3×,
+  else the old reading is kept. This confirms the firmware map's
+  *digital-strobe + busy/ready handshake* picture (`P1.5` strobe, `P1.4` ready):
+  there is no parallel ADC, just one multiplexed resistance-measuring channel.
+- **Sensors are resistive** — test resistors substitute for them directly
+  (glossary: Pt100). `REF` is an on-board reference resistor for ratiometric
+  measurement. Useful calibration points: `TSTAV` defaults to **60 °C**, testable
+  with **52 °C / 70 °C** test resistors.
+- **Actuator drives (control unit → power-supply):** `VA` (= `VA1`), `VH`,
+  `PAK I`, `PAK II` — each LED lights when that actuator is being driven. (VA2 is
+  the de-energised complement of VA1, so it need not be a separate line.)
+- **Status / metering outputs:** `LL` (aux-heat on), `LE` / `AE` (blink once per
+  energy kWh).
+- **Flow-pulse inputs (→ control unit):** `VM`, `LVM` — the box can inject pulses
+  to verify the control unit counts them.
+
+Net effect for the pinout trace: the DB25 must carry power + GND, **7 resistive
+sensor lines on one multiplexed measuring channel** (TH, TAK, THM, TAM, TAP, TS,
+plus the REF reference), the strobe/ready handshake pair, the actuator drives
+(VA1, VH, PAK I, PAK II), the LL/LE/AE status lines, and the VM/LVM pulse inputs.
 
 | DB25 pin | Traced to (head-unit net) | Backend function | Firmware signal | Notes |
 | --- | --- | --- | --- | --- |
