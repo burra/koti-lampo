@@ -61,6 +61,24 @@ Cannot be read from the photos. Fill this in with a multimeter: probe each DB25
 pin on `bottom_pcb`, trace to a CPU port pin / driver transistor / transformer
 tap / GND, then match to the firmware signal above.
 
+**Known signal inventory (from `Kotilämpö_vuokaaviot.pdf`, KUVA 11).** That
+schematic draws the DB25 explicitly; its legend decodes every line on the cable.
+The DB25 must therefore carry some subset of these — use it as the candidate list
+when tracing. See [`flowcharts_en.md`](flowcharts_en.md) for full definitions.
+
+Sensors (inputs): `TH` room, `TAK` solar collector, `THM` heating supply, `TAM`
+solar-exchanger supply, `TAP` return, `TS` storage tank, `VM` heating flow,
+`LVM` DHW flow.
+
+Actuators (outputs): `VA1`/`VA2` solenoid valves, `VH` 3-way mixing valve,
+`VP` circulation pump, `PM1`/`PM2` damper motors, `PAK I`/`PAK II` solar-fan
+contactor (2 stages), `VPK` pump contactor; plus `AE`/`LE` energy-pulse outputs to
+the remote display.
+
+Power: mains feed is `1~ 220 V, 10 A` via a `T 6.3 A` slow fuse + transformer on
+the backend side (KUVA 6 / KUVA 11). The umbilical is Valmet-supplied cable in a
+Ø50 conduit, **7 m max**.
+
 | DB25 pin | Traced to (head-unit net) | Backend function | Firmware signal | Notes |
 | --- | --- | --- | --- | --- |
 | 1 |  |  |  |  |
