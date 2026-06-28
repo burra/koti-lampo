@@ -95,19 +95,19 @@ Runs `ALKUASETUKSET` (init) once, then loops every **1 minute**:
 flowchart TD
     A([Start / ALKU]) --> B[Initial settings / ALKUASETUKSET]
     B --> L1[1. Measure temperatures]
-    L1 --> Q1{Snow? / LUMI ON}
+    L1 --> Q1{"Snow? / LUMI ON"}
     Q1 -- yes --> S8[8. Snow melting]
     S8 --> L1
     Q1 -- no --> L2[2. Read setpoints]
-    L2 --> Q2{TH sensor present?}
+    L2 --> Q2{"TH sensor present?"}
     Q2 -- no --> L4pre
     Q2 -- yes --> L3[3. Room-temp control]
-    L3 --> L4pre{Pulses? / PULSSEJA}
+    L3 --> L4pre{"Pulses? / PULSSEJA"}
     L4pre -- yes --> L4[4. Counter / metering program]
     L4 --> Q3
-    L4pre -- no --> Q3{TAK sensor present?}
+    L4pre -- no --> Q3{"TAK sensor present?"}
     Q3 -- yes --> L5[5. Solar program]
-    L5 --> Q4{TS sensor present?}
+    L5 --> Q4{"TS sensor present?"}
     Q3 -- no --> Q4
     Q4 -- yes --> L6[6. Auxiliary-heat program]
     L6 --> L7[7. Fault detection]
@@ -131,18 +131,18 @@ times, then decrement the averaging counter. Loop until the averaging counter = 
 
 ```mermaid
 flowchart TD
-    I[meas_avg=7, retry=3] --> R{Reference sensor?}
+    I[meas_avg=7, retry=3] --> R{"Reference sensor?"}
     R -- yes --> RS[select sensor; tx = t_high − t_low; tref = tx]
     R -- no --> NS[select sensor; tx = t_high − t_low]
-    NS --> AV{Averaging?}
-    AV -- no --> C[Tx = (tx − tref)/tref × 258.98]
-    C --> G{−200 < Tx < 400?}
-    G -- no --> T3{tried 3×?}
+    NS --> AV{"Averaging?"}
+    AV -- no --> C["Tx = (tx − tref)/tref × 258.98"]
+    C --> G{"−200 < Tx < 400?"}
+    G -- no --> T3{"tried 3×?"}
     T3 -- no --> NS
     G -- yes --> DEC[decrement meas_avg counter]
     AV -- yes --> DEC
     T3 -- yes --> DEC
-    RS --> Z{meas_avg = 0?}
+    RS --> Z{"meas_avg = 0?"}
     DEC --> Z
     Z -- no --> R
     Z -- yes --> OUT([to block 2])
@@ -156,13 +156,13 @@ setback `ΔAH`, return-water max `AP`, rise `ΔH`. Then derive the working hold 
 
 ```mermaid
 flowchart TD
-    S2([from 1]) --> SN{Snow? / LUMI ON}
+    S2([from 1]) --> SN{"Snow? / LUMI ON"}
     SN -- yes --> J8([to 8])
     SN -- no --> RD[read AH, ATS, ΔAH, AP, ΔH]
-    RD --> PB{Base temp / program active?}
+    RD --> PB{"Base temp / program active?"}
     PB -- no --> P12["PITO = 12°C; if setback-day: RAJA = 12°C"]
-    PB -- yes --> SBD{Setback day?}
-    SBD -- yes --> SBH{Setback hour?}
+    PB -- yes --> SBD{"Setback day?"}
+    SBD -- yes --> SBH{"Setback hour?"}
     SBH -- yes --> PR2["PITO = AH − ΔAH"]
     SBD -- no --> PR1["PITO = AH"]
     SBH -- no --> PR1
@@ -186,15 +186,15 @@ direction/hysteresis memory bit.
 
 ```mermaid
 flowchart TD
-    S3([from 2]) --> G3{0 < TH < 35°C?}
+    S3([from 2]) --> G3{"0 < TH < 35°C?"}
     G3 -- no --> O3([to 4])
-    G3 -- yes --> D{PITO − TH > 0.5°C?}
+    G3 -- yes --> D{"PITO − TH > 0.5°C?"}
     D -- yes --> VHON[VH ON] --> SET1[VA1 ON, VA2 OFF, ALASBITTI=0]
-    D -- no --> VHOFF[VH OFF] --> AB{ALASBITTI = 1?}
-    AB --> H1{TH−RAJA vs ±0.5°C}
-    H1 --> H2{TAP−THM > 1°C?}
-    H2 --> H3{ALASBITTI = 1?}
-    H3 --> H4{TH−PITO vs ±0.5°C}
+    D -- no --> VHOFF[VH OFF] --> AB{"ALASBITTI = 1?"}
+    AB --> H1{"TH−RAJA vs ±0.5°C"}
+    H1 --> H2{"TAP−THM > 1°C?"}
+    H2 --> H3{"ALASBITTI = 1?"}
+    H3 --> H4{"TH−PITO vs ±0.5°C"}
     H4 --> SET0[VA1 OFF, VA2 ON, ALASBITTI=1]
     SET0 --> O3
     SET1 --> O3
@@ -214,18 +214,18 @@ Each pulse adds a fixed energy quantum (≈ **11.51 Wh** per pulse-unit):
 
 ```mermaid
 flowchart TD
-    S4([from 3]) --> WP{Water pulses?}
+    S4([from 3]) --> WP{"Water pulses?"}
     WP -- no --> O4([to 5])
     WP -- yes --> DD[Δ⁻ = THM−TAM; Δ⁺ = TAP−TAM]
-    DD --> DHW{DHW pulses LVM?}
+    DD --> DHW{"DHW pulses LVM?"}
     DHW -- yes --> EDHW[KWH⁻ += N·45·11.51 Wh; LVM += N·ILVM; ILVM=0]
-    DHW -- no --> CW{Circulation pulses IVM?}
+    DHW -- no --> CW{"Circulation pulses IVM?"}
     EDHW --> CW
-    CW --> CM{Δ⁻ > 0.5°C?}
+    CW --> CM{"Δ⁻ > 0.5°C?"}
     CM -- yes --> ECON[KWH⁻ += N·Δ⁻·11.51 Wh]
-    CM -- no --> SM{Δ⁺ > 0.5°C?}
+    CM -- no --> SM{"Δ⁺ > 0.5°C?"}
     ECON --> SM
-    SM -- yes --> SB{AURINKOBITTI = 1?}
+    SM -- yes --> SB{"AURINKOBITTI = 1?"}
     SB -- yes --> ESOL[KWH⁺ += M·Δ⁺·11.51 Wh]
     ESOL --> ACC[KVM += N·IVM; IVM=0; KIERTO=0]
     SB -- no --> ACC
@@ -246,20 +246,20 @@ collector-to-exchanger difference `TAK − TAM`:
 
 ```mermaid
 flowchart TD
-    S5([from 4]) --> G5{−50 < TAK < 250°C?}
+    S5([from 4]) --> G5{"−50 < TAK < 250°C?"}
     G5 -- no --> O5([to 6])
     G5 -- yes --> CLR["'tank full' LED OFF; 'solar' LED OFF; AURINKOBITTI=0"]
-    CLR --> F1{TAM < 90°C?}
-    F1 -- no --> F2{TAM < 80°C?}
+    CLR --> F1{"TAM < 90°C?"}
+    F1 -- no --> F2{"TAM < 80°C?"}
     F1 -- yes --> FB[tank-full bit=1] --> LED1[tank-full LED ON]
-    F2 -- yes --> CB{tank-full bit=1?}
+    F2 -- yes --> CB{"tank-full bit=1?"}
     CB --> FB0[tank-full bit=0]
     LED1 --> DT
     FB0 --> DT
-    F2 -- no --> DT{TAK−TAM < 3°C?}
-    DT -- yes --> D8{TAK−TAM < 8°C?}
-    D8 --> PK1{PAK I OFF?}
-    PK1 --> D15{TAK−TAM < 15°C?}
+    F2 -- no --> DT{"TAK−TAM < 3°C?"}
+    DT -- yes --> D8{"TAK−TAM < 8°C?"}
+    D8 --> PK1{"PAK I OFF?"}
+    PK1 --> D15{"TAK−TAM < 15°C?"}
     D15 --> P1ON[PAK I ON]
     D15 --> P2ON[PAK II ON]
     PK1 --> POFF[PAK I/II OFF]
@@ -292,20 +292,20 @@ sched:  TEHO ON when within the active window (e.g. 06<KLO<22 / 07<KLO<23
 
 ```mermaid
 flowchart TD
-    S6([from 5]) --> G6{0 < TS < 99°C?}
+    S6([from 5]) --> G6{"0 < TS < 99°C?"}
     G6 -- no --> O6([to 7])
-    G6 -- yes --> HC{TS > 95°C?}
+    G6 -- yes --> HC{"TS > 95°C?"}
     HC -- yes --> NZ[NYT=0]
-    HC -- no --> MODE{TAPA / KLO schedule}
-    MODE --> LB{LASKUBITTI1 = 0?}
+    HC -- no --> MODE{"TAPA / KLO schedule"}
+    MODE --> LB{"LASKUBITTI1 = 0?"}
     LB -- yes --> LEARN["LASKUBITTI1=1; ERO=TS−TSTAV; shift TAKA[]; TAKA[1]=TAK; DELTA=15−min TAKA; TSH=TS; NYT=0"]
     LEARN --> TGT[compute TSTAV, AIKA, HETKI, NYT]
     NZ --> SCHED
-    LB -- no --> SCHED{in active window?}
+    LB -- no --> SCHED{"in active window?"}
     TGT --> SCHED
     SCHED -- yes --> ON[TEHO ON]
     SCHED -- no --> OFF[TEHO OFF]
-    ON --> RST{KLO = 8/18?}
+    ON --> RST{"KLO = 8/18?"}
     OFF --> RST
     RST -- yes --> CLR6[LASKUBITTI 1 & 2 = 0]
     RST -- no --> O6
@@ -325,21 +325,21 @@ Clears the fault LEDs, then runs plausibility checks and lights either the
 ```mermaid
 flowchart TD
     S7([from 6]) --> CLR7[fault LEDs OFF]
-    CLR7 --> C1{TAP < 5°C?}
+    CLR7 --> C1{"TAP < 5°C?"}
     C1 -- yes --> VHON7[VH ON] --> PF1[PAK I/II OFF]
-    C1 -- no --> C2{KIERTO > 64?}
+    C1 -- no --> C2{"KIERTO > 64?"}
     C2 -- yes --> PF2[PAK I/II OFF]
-    C2 -- no --> C3{TAM−TAP > 1°C?}
-    C3 -- yes --> FC{VIKALASKURI > 16?}
+    C2 -- no --> C3{"TAM−TAP > 1°C?"}
+    C3 -- yes --> FC{"VIKALASKURI > 16?"}
     FC -- no --> INC[VIKALASKURI += 1]
     FC -- yes --> PF2
     C3 -- no --> RC[VIKALASKURI = 0]
-    RC --> V1[VA1 closed] --> AP1{AP−TAM < 0?}
-    AP1 --> AP2{AP−THM < 0?}
+    RC --> V1[VA1 closed] --> AP1{"AP−TAM < 0?"}
+    AP1 --> AP2{"AP−THM < 0?"}
     AP2 -- yes --> VHOFF7[VH OFF]
-    AP1 --> PH{PITO−TH > 1°C?}
-    PH --> TSG{0 < TS < 99°C?}
-    TSG --> TST{TSTAV−TS > 5°C?}
+    AP1 --> PH{"PITO−TH > 1°C?"}
+    PH --> TSG{"0 < TS < 99°C?"}
+    TSG --> TST{"TSTAV−TS > 5°C?"}
     TST --> WLED[water-circ fault LED ON]
     PF1 --> ALED[air-circ fault LED ON]
     PF2 --> WLED
@@ -357,13 +357,13 @@ snow on the collector, counting down `LUMILASKURI`; stops when warm enough
 
 ```mermaid
 flowchart TD
-    S8([from 1]) --> C8{LUMILASKURI = 0?}
+    S8([from 1]) --> C8{"LUMILASKURI = 0?"}
     C8 -- yes --> O8([to 1])
-    C8 -- no --> SB8{AURINKOBITTI = 1?}
+    C8 -- no --> SB8{"AURINKOBITTI = 1?"}
     SB8 -- no --> O8
     SB8 -- yes --> DEC8[LUMILASKURI −= 1]
-    DEC8 --> Z8{LUMILASKURI = 0?}
-    Z8 -- no --> WARM{TAP > 10°C?}
+    DEC8 --> Z8{"LUMILASKURI = 0?"}
+    Z8 -- no --> WARM{"TAP > 10°C?"}
     WARM -- yes --> ON8[PAK I ON]
     WARM -- no --> OFF8[PAK I/II OFF]
     Z8 -- yes --> OFF8
