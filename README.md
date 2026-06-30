@@ -1,7 +1,4 @@
 # Valmet Kotilämpö
-
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/burra/koti-lampo/badge)](https://scorecard.dev/viewer/?uri=github.com/burra/koti-lampo)
-
 This is meant to be a backup for if the several decades old HVAC system to keep it running. 
 
 
