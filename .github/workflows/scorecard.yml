@@ -1,5 +1,6 @@
 name: Scorecard supply-chain security
 on:
+  branch_protection_rule:
   schedule:
     - cron: '21 5 * * 1'
   push:
@@ -13,18 +14,20 @@ jobs:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      security-events: write
+      id-token: write
     steps:
       - name: "Checkout code"
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
 
       - name: "Run analysis"
         uses: ossf/scorecard-action@05b42c624433fc40578a4040d5cf5e36ddca8cde # v2.4.2
         with:
           results_file: results.sarif
           results_format: sarif
-          # Private repo: cannot publish to the public OpenSSF API.
-          publish_results: false
+          publish_results: true
 
       - name: "Upload artifact"
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
@@ -32,3 +35,8 @@ jobs:
           name: SARIF file
           path: results.sarif
           retention-days: 5
+
+      - name: "Upload to code-scanning"
+        uses: github/codeql-action/upload-sarif@9e8d0789d4a0fa9ceb6b1738f7e269594bdd67f0 # v3.28.9
+        with:
+          sarif_file: results.sarif
