@@ -1,2 +1,3 @@
 out/*.rep/
 out/*.gpr
+out/bank1_*.ghidra.c

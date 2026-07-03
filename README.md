@@ -2,7 +2,8 @@
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/burra/koti-lampo/badge)](https://scorecard.dev/viewer/?uri=github.com/burra/koti-lampo)
 
-This is meant to be a backup for if the several decades old HVAC system to keep it running. 
+A preservation and backup effort to keep a several-decades-old Valmet Kotilämpö
+solar-heating HVAC controller running, and eventually build a modern replacement.
 
 
 ## Hypothesis
@@ -43,6 +44,9 @@ firestarter verify M2716 3EF2H.bin
 
 firestarter read M2716 A98EH.bin
 firestarter verify M2716 A98EH.bin 
+
+# Verify the committed dumps against the recorded SHA-256 hashes (no hardware needed)
+cd bin && sha256sum -c checksum.txt && cd ..
 ```
 
 ### Find a compatible EEprom replacement
