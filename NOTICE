@@ -1,0 +1,27 @@
+NOTICE
+======
+
+This repository documents a decades-old Valmet Kotilämpö solar-heating HVAC
+controller for preservation, repair and interoperability.
+
+The MIT License in this repository (see LICENSE) covers only the *original work*
+created by the repository authors, including:
+
+  - the C reconstruction and disassembly notes (disasm/)
+  - the Ghidra tooling and decompiler output (ghidra/)
+  - the English translations and analysis documents (docs/*.md, README.md)
+
+The following materials are NOT original work of the repository authors and are
+NOT covered by the MIT grant. They remain the property of their respective
+rights holders (Valmet Oy or its successors) and are included here solely for
+archival, repair and interoperability purposes:
+
+  - the firmware ROM dumps               (bin/3EF2H.bin, bin/A98EH.bin,
+                                          bin/checksum.txt, disasm/*.d48)
+  - the original Valmet manuals/schematics (docs/*.pdf)
+  - the board block diagram              (Display blockschema.odg)
+  - photographs of the original hardware (pic/)
+
+No copyright is claimed over these third-party materials. If you are a rights
+holder and object to their inclusion, please open an issue and they will be
+removed.
