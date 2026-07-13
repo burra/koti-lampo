@@ -1,7 +1,5 @@
 # Valmet Kotilämpö
 
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/burra/koti-lampo/badge)](https://scorecard.dev/viewer/?uri=github.com/burra/koti-lampo)
-
 A preservation and backup effort to keep a several-decades-old Valmet Kotilämpö
 solar-heating HVAC controller running, and eventually build a modern replacement.
 
