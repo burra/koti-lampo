@@ -161,7 +161,7 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 9 |  |  |  |  |
 | 10 |  |  |  |  |
 | 11 |  |  |  |  |
-| 12 |  |  |  |  |
+| 12 | 4N26 (second, marked "005F") pin 1 | Optoisolator LED-side leg | — | Confirmed; opto = galvanic isolation crossing to mains-side backend |
 | 13 | GND | Ground | — | Confirmed |
 | 14 | GND | Ground | — | Confirmed |
 | 15 |  |  |  |  |
