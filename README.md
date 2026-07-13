@@ -6,6 +6,24 @@ A preservation and backup effort to keep a several-decades-old Valmet Kotilämp�
 solar-heating HVAC controller running, and eventually build a modern replacement.
 
 
+## Current status — what works today
+
+Confirmed working:
+
+* ✅ **Firmware dumped from both units.** The B2716-6 UV-EPROMs were read out of
+  both control units, and both units contain **byte-for-byte identical**
+  firmware (same SHA-256 — see [`bin/checksum.txt`](bin/checksum.txt)). The two
+  2K dumps are committed as [`bin/3EF2H.bin`](bin/3EF2H.bin) and
+  [`bin/A98EH.bin`](bin/A98EH.bin).
+* ✅ **Runs on a modern 28C16.** The original PCBs have been confirmed to run
+  correctly with the firmware written into the easier-to-source, still-available
+  **28C16** EEPROM — a working drop-in replacement for the now-scarce B2716-6.
+  This means a failed EPROM no longer blocks keeping the system running.
+
+Still open (see [Hypothesis](#hypothesis) below): the DB25 pinout, a redrawn
+schematic/PCB, and an ESP32-based CPU replacement.
+
+
 ## Hypothesis
 
 * ~~Make backups of the 2st B2716-6 EEPROM's from the spare pcb and write into 28C16 or 27C16 proms~~
