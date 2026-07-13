@@ -15,7 +15,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       security-events: write
-      id-token: write
     steps:
       - name: "Checkout code"
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -27,7 +26,8 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
-          publish_results: true
+          # Do not publish results to the public OpenSSF API.
+          publish_results: false
 
       - name: "Upload artifact"
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
