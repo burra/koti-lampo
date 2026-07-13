@@ -2,8 +2,9 @@
 
 The Valmet Kotilämpö is split into two physically separate halves joined by a
 single multi-conductor cable terminated in a **DB25 D-sub** ("printer"-style)
-connector. This is **not** a printer port — it is the proprietary I/O harness
-that carries power, sensor and actuator signals between the two halves.
+connector, labelled **X1** on the PCB silkscreen. This is **not** a printer
+port — it is the proprietary I/O harness that carries power, sensor and
+actuator signals between the two halves.
 
 | Half | Where | Contents |
 | --- | --- | --- |
@@ -149,20 +150,20 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 
 | DB25 pin | Traced to (head-unit net) | Backend function | Firmware signal | Notes |
 | --- | --- | --- | --- | --- |
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
+| 1 | VCC | Power supply in | — | Confirmed |
+| 2 | GND | Ground | — | Confirmed |
 | 3 |  |  |  |  |
 | 4 |  |  |  |  |
 | 5 |  |  |  |  |
 | 6 |  |  |  |  |
 | 7 |  |  |  |  |
-| 8 |  |  |  |  |
+| 8 | GND | Ground | — | Confirmed |
 | 9 |  |  |  |  |
 | 10 |  |  |  |  |
 | 11 |  |  |  |  |
 | 12 |  |  |  |  |
-| 13 |  |  |  |  |
-| 14 |  |  |  |  |
+| 13 | GND | Ground | — | Confirmed |
+| 14 | GND | Ground | — | Confirmed |
 | 15 |  |  |  |  |
 | 16 |  |  |  |  |
 | 17 |  |  |  |  |
@@ -195,10 +196,11 @@ is the *pinout* — which DB25 pin each lands on — not the sensor technology.
 
 ### How to take the measurements
 
-1. Power **off**, mains disconnected. Identify DB25 pin 1 (usually marked on the
-   shell or silkscreen).
-2. Continuity from each DB25 pin to: every 8035 port pin, each relay-driver
-   transistor collector/base, transformer secondary, and GND/0V plane.
+1. Power **off**, mains disconnected. The connector is **X1** on the PCB
+   silkscreen. **Pin 1 = VCC; pins 2, 8, 13, 14 = GND** (confirmed).
+2. Continuity from each remaining DB25 pin to: every 8035 port pin, each
+   relay-driver transistor collector/base, transformer secondary, and GND/0V
+   plane.
 3. Sensors are **PT100** (confirmed by `IO list.ods`); no need to identify the
    curve. Just verify ~100 Ω near 0 °C to confirm wiring/probe before tracing
    each sensor line to its DB25 pin.
