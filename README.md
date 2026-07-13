@@ -32,6 +32,25 @@ schematic/PCB, and an ESP32-based CPU replacement.
 * Create drop in replacement in the cpu socket with e.g and ESP32
   
 
+## Repository layout
+
+The two reverse-engineering directories are kept separate on purpose — they are
+two independent views of the same firmware, and comparing them is the whole
+point (where they disagree, one is wrong):
+
+| Path | What it is | How it was made |
+| --- | --- | --- |
+| [`bin/`](bin/) | the raw ROM dumps (`3EF2H.bin`, `A98EH.bin`) + `checksum.txt` | read off the chips |
+| [`disasm/`](disasm/) | per-bank assembly (`*.d48`) + a **hand-written** annotated C reconstruction ([`koti_lampo.c`](disasm/koti_lampo.c)) | `d48` disassembler + human analysis |
+| [`ghidra/`](ghidra/) | Ghidra tooling + **machine-generated** decompiler C output in [`ghidra/out/`](ghidra/out/) | Ghidra headless (`run_ghidra.sh`) |
+| [`docs/`](docs/) | English translations, the DB25 pinout, and the reimplementation spec | transcription + analysis |
+
+So `disasm/koti_lampo.c` is "what a human concluded the code does" and
+`ghidra/out/combined_4k.ghidra.c` is "what an automated decompiler independently
+says it does" — keeping them apart is what caught the internal- vs
+external-RAM modelling fix.
+
+
 ## UV-Eprom
 UV-Eproms start to be rare and expensive as they where released in the beginning of 1980 and the intel series I couldn't find where to buy 
 
