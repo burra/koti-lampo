@@ -154,20 +154,28 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 2 | GND | Confirmed |
 | 3-7 | — | Not yet traced |
 | 8 | GND | Confirmed |
-| 9 | — | Not yet traced |
-| 10 | `P8243 #2` (same package as 11/12/19/20/21) | Confirmed chip; exact package pin TBD |
-| 11 | `P8243 #2` (same package as 10/12/19/20/21) | Confirmed chip; exact package pin TBD |
+| 9 | `P8243 #2` (same package as 10/11/12/19/20/21) | Confirmed chip; exact package pin TBD |
+| 10 | `P8243 #2` (same package as 9/11/12/19/20/21) | Confirmed chip; exact package pin TBD |
+| 11 | `P8243 #2` (same package as 9/10/12/19/20/21) | Confirmed chip; exact package pin TBD |
 | 12 | 4N26 #8 pin 1 (LED anode) → `P8243 #2` pin 21 (`P53`) | Confirmed; corrects earlier "4N26 #2 / 005F" misattribution |
 | 13 | GND | Confirmed |
 | 14 | GND | Confirmed |
 | 15-18 | — | Not yet traced |
-| 19 | `P8243 #2` (same package as 10/11/12/20/21) | Confirmed chip; exact package pin TBD |
-| 20 | `P8243 #2` (same package as 10/11/12/19/21) | Confirmed chip; exact package pin TBD |
-| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed; same physical package as 10/11/12/19/20, see multi-chip caveat |
+| 19 | `P8243 #2` (same package as 9/10/11/12/20/21) | Confirmed chip; exact package pin TBD |
+| 20 | `P8243 #2` (same package as 9/10/11/12/19/21) | Confirmed chip; exact package pin TBD |
+| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed; same physical package as 9/10/11/12/19/20, see multi-chip caveat |
 | 22 | `P8243 #1` pin 16 (`P73`) → 4N26 #1 collector | Confirmed; pulsed actuator/status output, see opto driver chain |
 | 23 | `P8243 #1` pin 15 (`P72`) | Confirmed; fault/interlock input, see pin 23 note |
 | 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see multi-chip caveat |
 | 25 | `P8243 #1` pin 1 (`P50`) | Confirmed pin; likely companion write to pin 22's pulse, see pin 25 note |
+
+**11 pins now accounted for across two `P8243` chips:** `P8243 #1` (DB25
+pins 22, 23, 24, 25 — all 4 package pins identified) and `P8243 #2` (DB25
+pins 9, 10, 11, 12, 19, 20, 21 — package pins identified for 12 and 21, the
+remaining five confirmed to the same physical chip with exact package pins
+still TBD). Combined with the power/ground group (1, 2, 8, 13, 14), that's
+**16 of 25 DB25 pins confirmed**; the remaining 9 (3-7, 15-18) are still
+untraced.
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
