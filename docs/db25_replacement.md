@@ -152,15 +152,21 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | --- | --- | --- | --- |
 | 1 | — | — | VCC |
 | 2 | — | — | GND |
-| 3-7 | — | — | Not yet traced |
+| 3 | — | — | VCC |
+| 4 | — (via `CD4093BFX`, TBD) | 4N26 #12 + #15 | Confirmed; a single shared node — 4N26 #12 pin 2 (LED cathode) **and** 4N26 #15 pin 1 (LED anode), see shared-node note |
+| 5 | — (further trace TBD) | 4N26 #13 | Confirmed; LED anode (pin 1), downstream P8243/CPU pin not yet traced |
+| 6 | — (further trace TBD) | 4N26 #14 | Confirmed; LED anode (pin 1), downstream P8243/CPU pin not yet traced |
+| 7 | — | — | Not yet traced |
 | 8 | — | — | GND |
 | 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
 | 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
-| 11 | `#2` pin TBD | 4N26 #9 | Corrects earlier "pin 24 / VCC" misattribution |
+| 11 | `#2` pin 24 (`VCC`, anomalous) | 4N26 #9 | Re-confirmed after flagging; pin 24 is the P8243's own hardwired VCC pin, not a P4-P7 signal — see anomaly note |
 | 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Corrects earlier "4N26 #2 / 005F" misattribution |
 | 13 | — | — | GND |
-| 14 | — | — | GND |
-| 15-18 | — | — | Not yet traced |
+| 14 | — | — | VCC (corrects earlier GND misattribution) |
+| 15 | — | — | GND |
+| 16 | — | — | VCC (DB25 connector pin — distinct from `P8243 #1` package pin 16 used for DB25 pin 22's opto chain, below) |
+| 17-18 | — | — | Not yet traced |
 | 19 | `#2` pin 19 (`P61`) | 4N26 #7 | Candidate firmware match, see multi-chip caveat |
 | 20 | `#2` pin 18 (`P62`) | 4N26 #6 | Candidate firmware match, see multi-chip caveat |
 | 21 | `#2` pin 17 (`P63`) | 4N26 #5 | Same physical package as 9/10/11/12/19/20, see multi-chip caveat |
@@ -169,16 +175,54 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 24 | `#1` pin 14 (`P71`) | 4N26 #3 | Candidate firmware match, see multi-chip caveat |
 | 25 | `#1` pin 1 (`P50`) | 4N26 #4 | Likely companion write to pin 22's pulse, see pin 25 note |
 
-**15 of 25 DB25 pins confirmed:** power/ground (1, 2, 8, 13, 14), all 4
-`P8243 #1` package pins (22, 23, 24, 25), and 6 of 7 `P8243 #2` package pins
-(9, 10, 12, 19, 20, 21 — pin 11's exact package pin still open). The
-remaining 10 (3-7, 11's package pin, 15-18) are still untraced.
+**22 of 25 DB25 pins confirmed:** power/ground (VCC: 1, 3, 14, 16; GND: 2,
+8, 13, 15 — 8 pins), all 4 `P8243 #1` package pins (22, 23, 24, 25), 6 of 7
+`P8243 #2` package pins (9, 10, 12, 19, 20, 21 — pin 11's exact package pin
+still open), and pins 4, 5, 6 (each opto-isolated, downstream CPU/`P8243`
+pin not yet traced for any of the three). The remaining 3 (7, 17, 18) are
+still untraced, plus sub-detail gaps (pin 11's package pin, and the
+downstream CPU pins for 4/5/6).
 
-**Every traced signal pin (all except power/ground) runs through its own
-dedicated 4N26 optoisolator** — 11 confirmed so far, numbered in the order
-found (see the `Opto` column above). Given the board carries 7 `P8243`
+**Every traced signal pin (all except power/ground) runs through at least
+one dedicated 4N26 optoisolator** — 15 confirmed so far (pin 4 touches two:
+#12 and #15), numbered in the order found (see the `Opto` column above).
+Given the board carries 7 `P8243`
 packages (see multi-chip caveat below), the real opto count across the
-whole connector is likely in the dozens — 11 is a lower bound, not a total.
+whole connector is likely in the dozens — 12 is a lower bound, not a total.
+
+**Pin 4 doesn't go straight to a `P8243`** — its opto's collector (4N26
+#12 pin 5) feeds a `CD4093BFX` (quad 2-input NAND, already on the parts
+list as glue logic) instead. Unlike pin 22's chain (CPU drives the LED
+locally, DB25 carries the isolated collector out), pin 4's LED side is
+what's on the DB25 — meaning the *backend* drives this opto, and the
+signal direction is inbound to the head unit. The `CD4093BFX` is plausibly
+there to clean up/debounce the opto's output edge (its NAND gates are
+Schmitt-trigger inputs) before it reaches CPU logic — worth checking
+whether it lands on a `P8243` port after the gate, or goes straight to an
+8035 port pin.
+
+**Pin 4 is a shared node across two optos, confirmed by continuity — not a
+signal-chain continuation.** The same physical DB25 pin 4 wire lands on
+*both* 4N26 #12 pin 2 (LED cathode) *and* 4N26 #15 pin 1 (LED anode). That's
+cathode-to-anode across two different packages on one net, which doesn't
+fit a simple "common ground return" or "common supply" bus (those would tie
+same-polarity legs together — several cathodes, or several anodes — not
+mix polarities). Worth checking what else shares this node before drawing
+conclusions about its role; it may be a bias/reference point specific to
+this pair of optos rather than a wider shared rail.
+
+**Pin 11 — anomaly, re-confirmed twice.** DB25 pin 11 traces through 4N26
+#9 to `P8243 #2` pin 24 — which per the datasheet pinout (see the
+`README.md` datasheets table) is the package's own hardwired **VCC** pin,
+not a `P4-P7` signal pin. That's electrically odd: an opto's collector is a
+switched signal, not a stable supply, so feeding it into a chip's power pin
+doesn't fit a normal signal path. This was flagged and re-checked; the
+finding stands as measured. One thing worth double-checking physically:
+`P8243` and the `2716` EPROMs are both 24-pin DIP packages sitting near
+each other on this board, and both have VCC-type pins in that same corner
+of the package — worth confirming which specific chip is actually being
+probed here before treating this as a confirmed P8243-to-opto link, rather
+than a mis-identified EPROM pin.
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
@@ -349,7 +393,7 @@ is the *pinout* — which DB25 pin each lands on — not the sensor technology.
 ### How to take the measurements
 
 1. Power **off**, mains disconnected. The connector is **X1** on the PCB
-   silkscreen. **Pin 1 = VCC; pins 2, 8, 13, 14 = GND** (confirmed).
+   silkscreen. **VCC: pins 1, 3, 14, 16; GND: pins 2, 8, 13, 15** (confirmed).
 2. Continuity from each remaining DB25 pin to: every 8035 port pin, each
    relay-driver transistor collector/base, transformer secondary, and GND/0V
    plane.
