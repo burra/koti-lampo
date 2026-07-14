@@ -156,7 +156,7 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 8 | GND | Confirmed |
 | 9 | `P8243 #2` pin 22 (`P52`) | Confirmed; no firmware match found yet |
 | 10 | `P8243 #2` pin 23 (`P51`) | Confirmed; no firmware match found yet |
-| 11 | `P8243 #2` pin 24 = **VCC** | Confirmed; second VCC pin (not a P5/P6/P7 signal) — explains the 4 separate GND pins (2/8/13/14), redundant power/ground contacts for current across a 7 m cable |
+| 11 | 4N26 #9 (LED anode) → `P8243 #2` (exact package pin TBD) | Confirmed; corrects earlier "P8243 pin 24 / VCC" misattribution |
 | 12 | 4N26 #8 pin 1 (LED anode) → `P8243 #2` pin 21 (`P53`) | Confirmed; corrects earlier "4N26 #2 / 005F" misattribution |
 | 13 | GND | Confirmed |
 | 14 | GND | Confirmed |
@@ -169,13 +169,34 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see multi-chip caveat |
 | 25 | `P8243 #1` pin 1 (`P50`) | Confirmed pin; likely companion write to pin 22's pulse, see pin 25 note |
 
-**11 pins now accounted for across two `P8243` chips, all package pins
-identified:** `P8243 #1` (DB25 pins 22→`P73`, 23→`P72`, 24→`P71`,
-25→`P50`) and `P8243 #2` (DB25 pins 9→`P52`, 10→`P51`, 11→**VCC**,
-12→`P53`, 19→`P61`, 20→`P62`, 21→`P63`). Combined with the power/ground
-group (1, 2, 8, 13, 14 — now 6 pins including 11's second VCC), that's
-**16 of 25 DB25 pins confirmed**; the remaining 9 (3-7, 15-18) are still
-untraced.
+**11 pins now accounted for across two `P8243` chips:** `P8243 #1` (DB25
+pins 22→`P73`, 23→`P72`, 24→`P71`, 25→`P50`, all package pins identified)
+and `P8243 #2` (DB25 pins 9→`P52`, 10→`P51`, 11→TBD, 12→`P53`, 19→`P61`,
+20→`P62`, 21→`P63` — package pin for 11 still open after correcting the
+earlier VCC misattribution). Combined with the power/ground group (1, 2, 8,
+13, 14), that's **15 of 25 DB25 pins confirmed**; the remaining 10 (3-7,
+11's package pin, 15-18) are still open.
+
+**All 11 pins run through their own dedicated 4N26 optoisolator** — the
+full DB25-pin-to-opto map, numbered in the order confirmed:
+
+| DB25 pin | 4N26 # |
+| --- | --- |
+| 22 | #1 |
+| 23 | #2 |
+| 24 | #3 |
+| 25 | #4 |
+| 21 | #5 |
+| 20 | #6 |
+| 19 | #7 |
+| 12 | #8 |
+| 11 | #9 |
+| 10 | #10 |
+| 9 | #11 |
+
+Given the board carries 7 `P8243` packages (see multi-chip caveat below),
+an opto-per-DB25-pin count in the dozens across the whole connector
+wouldn't be surprising — 11 confirmed so far is a lower bound, not a total.
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
@@ -346,9 +367,7 @@ is the *pinout* — which DB25 pin each lands on — not the sensor technology.
 ### How to take the measurements
 
 1. Power **off**, mains disconnected. The connector is **X1** on the PCB
-   silkscreen. **Pins 1 and 11 = VCC; pins 2, 8, 13, 14 = GND** (confirmed) —
-   two VCC and four GND pins, consistent with power/ground redundancy across
-   a 7 m cable.
+   silkscreen. **Pin 1 = VCC; pins 2, 8, 13, 14 = GND** (confirmed).
 2. Continuity from each remaining DB25 pin to: every 8035 port pin, each
    relay-driver transistor collector/base, transformer secondary, and GND/0V
    plane.
