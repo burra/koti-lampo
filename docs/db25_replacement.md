@@ -159,10 +159,10 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 13 | GND | Confirmed |
 | 14 | GND | Confirmed |
 | 15-20 | — | Not yet traced |
-| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed pin; on a **different physical P8243** than 22-25, see two-chip caveat |
+| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed pin; on a **different physical P8243** than 22-25, see multi-chip caveat |
 | 22 | `P8243 #1` pin 16 (`P73`) → 4N26 #1 collector | Confirmed; pulsed actuator/status output, see opto driver chain |
 | 23 | `P8243 #1` pin 15 (`P72`) | Confirmed; fault/interlock input, see pin 23 note |
-| 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see two-chip caveat |
+| 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see multi-chip caveat |
 | 25 | `P8243 #1` pin 1 (`P50`) | Confirmed pin; likely companion write to pin 22's pulse, see pin 25 note |
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
@@ -249,37 +249,53 @@ this is a companion status/latch bit for the same actuator event as pin 22
 (e.g. "pulse done" or "select next stage"), and likely the **same physical
 chip** as pin 22/23.
 
-### Two-chip caveat — pins 21 and 24 need a disambiguation step
+### Multi-chip caveat — the board has (at least) 7 P8243 packages, not 2
 
-`disasm/koti_lampo.c` was written before we knew the board carries **two**
-physical `P8243` packages. It models port access with one generic set of
-functions (`movd_p4..p7`, `wr_p4..p7`, `or_p5/6/7`, `and_p5/6/7`) with no
-per-chip distinction — so a match like "`P7` bit `0x02`" could belong to
-*either* physical chip, and the code alone can't tell them apart yet.
+Confirmed by inspection: **4 `P8243` on the bottom (CPU) board, 3 more on the
+top (front-panel) board.** `disasm/koti_lampo.c` predates this and models
+port access with one generic set of functions (`movd_p4..p7`, `wr_p4..p7`,
+`or_p5/6/7`, `and_p5/6/7`) with no per-chip distinction — so any single
+code-level match like "`P7` bit `0x02`" could in principle belong to *any*
+of the 7 packages, not just the two seen on the DB25 so far.
 
-This matters for pins 21 and 24:
+**Important finding: the `P8243` serving DB25 pins 22-25 has its pin 6
+(`CS'`, chip select) not connected to anything** — no decode/select logic.
+On the 8243, `CS'` is a dedicated pin, separate from the shared 4-bit
+`PROG`-clocked command bus (`BUS` = `P20-P23`); with multiple 8243s on one
+shared bus, only the chip whose `CS'` is asserted may drive it back, so
+sharing a bus normally *requires* per-chip select logic (a plausible
+candidate already on the parts list: the **`MC14012B`** dual 4-input NAND,
+documented as board "glue logic"). A `CS'` wired to nothing implies the
+opposite: **this chip doesn't need arbitration because it isn't sharing its
+bus with anything** — i.e. this design most likely uses several independent
+`BUS`/`PROG` groups (plausibly one per board, or even one per chip-cluster)
+rather than one 7-way-decoded shared bus. That's a reasonable read of why
+there are 7 separate packages in the first place: simpler to give each
+functional group (front-panel keypad/display vs. CPU-board relay/sensor
+I/O) its own dedicated expansion bus than to build 7-way select decode.
 
-- **Pin 24** (`P8243 #1` pin 14, `P71`, bit `0x02` of P7) has a candidate
-  code match — `if (p7 & 0x02) { btn_inc(0x02, 0x18); ... }` in
-  `ext_interrupt()` — but that reads as a **front-panel button**, which is
-  architecturally odd for a pin that crosses the DB25 to the backend (the
-  front panel is local, wired by ribbon, not through X1 — see the photo
-  notes below). Likely a same-name collision with the *other* chip's code
-  path, not a real match. Treat as unresolved.
-- **Pin 21** (`P8243 #2` pin 17, `P63`) is on a different physical package
-  than pins 22-25 (confirmed by continuity), yet its only candidate code
-  match — `if (p6 & 0x08) { btn_start(); ... }` — sits in the *exact same*
-  `ext_interrupt()` loop, under the *same* `P2 = 0xAF` read strobe, as pin
-  23's fault-check. If that strobe really does select one specific physical
-  chip, pins 21 and 23 can't both be read through it — so either the strobe
-  doesn't uniquely select a chip (there's a separate, not-yet-modelled CS
-  line per package), or this candidate match is wrong. Treat as unresolved.
+This is good news for the pins 22/23/25 findings: that chip isn't
+contending with anything, so the `P2` strobe values already matched against
+the code for it should be trustworthy as they stand.
 
-**To resolve conclusively:** find each `P8243`'s pin 6 (`CS'`, chip select)
-and trace it back to whatever CPU/latch output enables that specific
-package. That per-chip CS line — not the `P2` page-strobe value alone — is
-what the reconstruction is currently missing, and until it's added, treat
-any `P8243 #2`-side firmware "match" as speculative.
+It reframes, rather than resolves, pins 21 and 24:
+
+- **Pin 21** (on a different physical package than 22-25, confirmed by
+  continuity) — next check is whether *its* `CS'` is also unconnected (own
+  dedicated bus, so the earlier "same `P2=0xAF` context" observation in
+  `ext_interrupt()` is coincidental naming, not evidence of sharing) or
+  wired to real decode logic (meaning it *does* share a bus with others,
+  and the decode line is what actually needs identifying — not `P2` alone).
+- **Pin 24** (`P8243 #1` pin 14, `P71`) — candidate match
+  `if (p7 & 0x02) { btn_inc(0x02, 0x18); ... }` still reads as a
+  front-panel button, architecturally odd for a DB25/backend pin. Treat as
+  unresolved regardless of the CS finding.
+
+**To resolve conclusively:** for each `P8243`, trace pin 6 (`CS'`) *and*
+the `BUS`/`PROG` pins (8-11, 7) back toward the CPU. Two chips only share a
+logical port space if both their `BUS` and `PROG` land on the same CPU
+pins — `CS'` wiring (or the lack of it) is what tells you whether that
+sharing needs arbitration.
 
 ### Backend terminal map — TO BE MEASURED
 
