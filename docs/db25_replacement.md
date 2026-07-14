@@ -161,7 +161,7 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 9 |  |  |  |  |
 | 10 |  |  |  |  |
 | 11 |  |  |  |  |
-| 12 |  |  |  |  |
+| 12 | 4N26 (second, marked "005F") pin 1 | Optoisolator LED-side leg | — | Confirmed; opto = galvanic isolation crossing to mains-side backend |
 | 13 | GND | Ground | — | Confirmed |
 | 14 | GND | Ground | — | Confirmed |
 | 15 |  |  |  |  |
@@ -171,10 +171,76 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 19 |  |  |  |  |
 | 20 |  |  |  |  |
 | 21 |  |  |  |  |
-| 22 |  |  |  |  |
-| 23 |  |  |  |  |
+| 22 | 4N26 (first) pin 5 (collector) | Optoisolator output leg → actuator/status drive | `P8243` pin 16 (via resistor) | Confirmed; see opto driver chain below |
+| 23 | `P8243` pin 15 (`P72`) | Fault/interlock input (LIKELY) | `P7` bit `0x04`, read in `read_timing_channel()` and `ext_interrupt()` | Confirmed pin; direction+meaning inferred from firmware, see note below |
 | 24 |  |  |  |  |
 | 25 |  |  |  |  |
+
+### Opto driver chain (confirmed pattern for pin 22, first 4N26)
+
+Tracing DB25 pin 22 found the full isolated signal path through the first
+4N26 on the board:
+
+```
+P8243 pin 16 --[resistor]--> 4N26 #1 pin 2 (LED cathode)
+                              4N26 #1 pin 1 (LED anode)  = VCC
+                              4N26 #1 pin 6 (output side) = GND
+                              4N26 #1 pin 5 (collector)  = DB25 pin 22
+```
+
+The CPU (via the `P8243` expander) sinks current through the LED to switch
+the opto; the isolated collector then drives DB25 pin 22 across the mains
+barrier. This is the same chain shape expected for every actuator/status
+line — useful as a template when tracing the remaining pins: find the
+resistor feeding an opto's LED cathode, work backward to the `P8243`/`P7`
+port bit for the firmware signal, and forward from the collector to the
+DB25 pin.
+
+**Firmware match:** on the [P8243](../README.md#datasheets) 24-pin DIP, pin 16
+is **`P73`** — bit 3 (MSB) of Port 7 (`P70..P73` = pins 13-16). Bit `0x08` of
+P7 is set, briefly held, then cleared (a pulse) in
+`regulation_pass()` @ `X0224` (`disasm/koti_lampo.c:326-328`):
+
+```c
+u8 relays = X(0x15) | 0x08; wr_p7(relays);
+bank1_busy_delay();                          /* call X0cff */
+relays &= 0xFB; X(0x15) = relays; wr_p7(relays);
+```
+
+### Pin 23 — likely a hard fault/interlock input (P73's neighbour, opposite direction)
+
+DB25 pin 23 traces to `P8243` pin 15, i.e. **`P72`** (bit `0x04` of the same
+`P7` port group as pin 22/`P73` above), but this bit is *read*, not written —
+`movd_p7()`, not `wr_p7()`. Two independent call sites treat it identically,
+as a hard fault:
+
+```c
+// read_timing_channel() @ X01eb — analog measurement poll
+if (movd_p7() & 0x04) { P2 &= 0x7F; for (;;) {} }  /* fault hang */
+
+// ext_interrupt() @ X04ff — button/panel scan
+if (p7 & 0x04) { for (;;) { P2 &= 0x7F; } }  /* fault hang */
+```
+
+Both deliberately lock the CPU in an infinite loop if the bit is set —
+consistent with a hard-wired safety interlock, not routine status. It also
+fits `io_init()`'s startup sequence (`or_p7(0xFF)` then `and_p7(0x00)`,
+i.e. P7 starts actively driven **low** by the CPU): the 8243's ports are
+quasi-bidirectional (weak pull, overridable by a stronger external drive),
+so the likely picture is the CPU normally holds this line low and some
+backend condition (high-limit thermostat, overtemperature cutout, or a
+power-supply fault line) can force it high, overriding the CPU's weak pull —
+detected on the next poll and treated as unrecoverable. This would be
+independent of the software fault logic already documented in the manuals
+(`TAP<5°C`, `TAM-TAP>1°C`, etc.) — a second, hardware-level safety layer.
+
+So DB25 pin 22 carries a **pulsed**, not level-held, actuator/status signal —
+consistent with the flow-pulse outputs `AE`/`LE` (energy metering, "blink
+once per kWh") rather than a level-held valve/relay line like `VA1`/`VH`.
+Next step: identify which XRAM[0x15] bits the *other* relay writes
+(`relay_clear_and_idle()` clears `0xFC` = bits 2-7) use, and match each to
+its own P7 pin (13/14/15/17-20 for P6, 21-23+1 for P5) and DB25 pin, to
+build out the rest of the actuator map.
 
 ### Backend terminal map — TO BE MEASURED
 
