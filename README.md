@@ -199,11 +199,11 @@ Components below are taken from the `Display blockschema.odg` board block diagra
 | EEPROM 16 Kbit (2K×8), UV-erasable | [B2716-6](https://www.alldatasheet.com/datasheet-pdf/pdf/22809/STMICROELECTRONICS/M2716.html) |
 | CPU, MCS-48 family (ROM-less 8048) | [P8035L](https://en.wikipedia.org/wiki/Intel_MCS-48) |
 | 8-bit I/O expander (DIP 24) | [P8243](https://www.alldatasheet.com/datasheet-pdf/pdf/164277/INTEL/P8243.html) |
-| Dual 4-input NAND gate (CMOS 4012) | [MC14012B](https://www.onsemi.com/pdf/datasheet/mc14012b-d.pdf) |
-| Dual type-D flip-flop (CMOS 4013) | [MC14013B](https://www.onsemi.com/pdf/datasheet/mc14013b-d.pdf) |
-| 12-bit binary counter (CMOS 4040) | [MC14040B](https://www.onsemi.com/pdf/datasheet/mc14040b-d.pdf) |
-| Dual 4-bit latch / databus driver (CMOS 4508) | [MC14508B](https://www.onsemi.com/pdf/datasheet/mc14508b-d.pdf) |
-| Optoisolator, transistor output | [4N26](https://www.onsemi.com/pdf/datasheet/4n26-d.pdf) |
+| Dual 4-input NAND gate (CMOS 4012) | [MC14012B](https://www.mouser.com/datasheet/2/308/mc14012b-d-1192998.pdf) |
+| Dual type-D flip-flop (CMOS 4013) | [MC14013B](https://www.mouser.com/datasheet/2/308/MC14013B-D-108054.pdf) |
+| 12-bit binary counter (CMOS 4040) | [MC14040B](https://www.mouser.com/datasheet/2/308/onsemiconductor_mc14040b-d-559131.pdf) |
+| Dual 4-bit latch / databus driver (CMOS 4508) | [MC14508B](https://www.alldatasheet.com/datasheet-pdf/pdf/898353/MOTOROLA/MC14508B.html) |
+| Optoisolator, transistor output | [4N26](https://www.alldatasheet.com/datasheet-pdf/pdf/98356/FAIRCHILD/4N26.html) |
 | EEPROM (non-volatile settings store) | VA2101 |
 
 
