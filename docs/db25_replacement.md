@@ -152,15 +152,18 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | --- | --- | --- | --- |
 | 1 | — | — | VCC |
 | 2 | — | — | GND |
-| 3-7 | — | — | Not yet traced |
+| 3 | — | — | VCC |
+| 4-7 | — | — | Not yet traced |
 | 8 | — | — | GND |
 | 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
 | 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
 | 11 | `#2` pin TBD | 4N26 #9 | Corrects earlier "pin 24 / VCC" misattribution |
 | 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Corrects earlier "4N26 #2 / 005F" misattribution |
 | 13 | — | — | GND |
-| 14 | — | — | GND |
-| 15-18 | — | — | Not yet traced |
+| 14 | — | — | VCC (corrects earlier GND misattribution) |
+| 15 | — | — | GND |
+| 16 | — | — | VCC (DB25 connector pin — distinct from `P8243 #1` package pin 16 used for DB25 pin 22's opto chain, below) |
+| 17-18 | — | — | Not yet traced |
 | 19 | `#2` pin 19 (`P61`) | 4N26 #7 | Candidate firmware match, see multi-chip caveat |
 | 20 | `#2` pin 18 (`P62`) | 4N26 #6 | Candidate firmware match, see multi-chip caveat |
 | 21 | `#2` pin 17 (`P63`) | 4N26 #5 | Same physical package as 9/10/11/12/19/20, see multi-chip caveat |
@@ -169,10 +172,11 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 24 | `#1` pin 14 (`P71`) | 4N26 #3 | Candidate firmware match, see multi-chip caveat |
 | 25 | `#1` pin 1 (`P50`) | 4N26 #4 | Likely companion write to pin 22's pulse, see pin 25 note |
 
-**15 of 25 DB25 pins confirmed:** power/ground (1, 2, 8, 13, 14), all 4
-`P8243 #1` package pins (22, 23, 24, 25), and 6 of 7 `P8243 #2` package pins
-(9, 10, 12, 19, 20, 21 — pin 11's exact package pin still open). The
-remaining 10 (3-7, 11's package pin, 15-18) are still untraced.
+**19 of 25 DB25 pins confirmed:** power/ground (VCC: 1, 3, 14, 16; GND: 2,
+8, 13, 15 — 8 pins), all 4 `P8243 #1` package pins (22, 23, 24, 25), and 6
+of 7 `P8243 #2` package pins (9, 10, 12, 19, 20, 21 — pin 11's exact
+package pin still open). The remaining 6 (4-7, 17-18, plus pin 11's package
+pin as a sub-detail) are still untraced.
 
 **Every traced signal pin (all except power/ground) runs through its own
 dedicated 4N26 optoisolator** — 11 confirmed so far, numbered in the order
@@ -349,7 +353,7 @@ is the *pinout* — which DB25 pin each lands on — not the sensor technology.
 ### How to take the measurements
 
 1. Power **off**, mains disconnected. The connector is **X1** on the PCB
-   silkscreen. **Pin 1 = VCC; pins 2, 8, 13, 14 = GND** (confirmed).
+   silkscreen. **VCC: pins 1, 3, 14, 16; GND: pins 2, 8, 13, 15** (confirmed).
 2. Continuity from each remaining DB25 pin to: every 8035 port pin, each
    relay-driver transistor collector/base, transformer secondary, and GND/0V
    plane.
