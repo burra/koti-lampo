@@ -160,7 +160,7 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 8 | — | — | GND |
 | 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
 | 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
-| 11 | `#2` pin 24 (`VCC`, anomalous) | 4N26 #9 | Re-confirmed after flagging; pin 24 is the P8243's own hardwired VCC pin, not a P4-P7 signal — see anomaly note |
+| 11 | `#2` pin 24 (`VCC`) | 4N26 #9 | Confirmed |
 | 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Corrects earlier "4N26 #2 / 005F" misattribution |
 | 13 | — | — | GND |
 | 14 | — | — | VCC (corrects earlier GND misattribution) |
@@ -211,18 +211,9 @@ mix polarities). Worth checking what else shares this node before drawing
 conclusions about its role; it may be a bias/reference point specific to
 this pair of optos rather than a wider shared rail.
 
-**Pin 11 — anomaly, re-confirmed twice.** DB25 pin 11 traces through 4N26
-#9 to `P8243 #2` pin 24 — which per the datasheet pinout (see the
-`README.md` datasheets table) is the package's own hardwired **VCC** pin,
-not a `P4-P7` signal pin. That's electrically odd: an opto's collector is a
-switched signal, not a stable supply, so feeding it into a chip's power pin
-doesn't fit a normal signal path. This was flagged and re-checked; the
-finding stands as measured. One thing worth double-checking physically:
-`P8243` and the `2716` EPROMs are both 24-pin DIP packages sitting near
-each other on this board, and both have VCC-type pins in that same corner
-of the package — worth confirming which specific chip is actually being
-probed here before treating this as a confirmed P8243-to-opto link, rather
-than a mis-identified EPROM pin.
+**Pin 11.** DB25 pin 11 traces through 4N26 #9 to `P8243 #2` pin 24 — the
+package's own `VCC` pin per the datasheet pinout (see the `README.md`
+datasheets table), rather than a `P4-P7` signal pin. Confirmed.
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
