@@ -153,7 +153,7 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 1 | — | — | VCC |
 | 2 | — | — | GND |
 | 3 | — | — | VCC |
-| 4 | — (via `CD4093BFX`, TBD) | 4N26 #12 | Confirmed; LED cathode (pin 2), collector (pin 5) feeds a `CD4093BFX` NAND gate, downstream CPU/P8243 pin not yet traced |
+| 4 | — (via `CD4093BFX`, TBD) | 4N26 #12 + #15 | Confirmed; a single shared node — 4N26 #12 pin 2 (LED cathode) **and** 4N26 #15 pin 1 (LED anode), see shared-node note |
 | 5-7 | — | — | Not yet traced |
 | 8 | — | — | GND |
 | 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
@@ -181,9 +181,10 @@ still open), and pin 4 (opto-isolated, but its far end lands on a
 remaining 5 (5-7, 17-18, plus pin 11's package pin and pin 4's downstream
 CPU pin as sub-details) are still untraced.
 
-**Every traced signal pin (all except power/ground) runs through its own
-dedicated 4N26 optoisolator** — 12 confirmed so far, numbered in the order
-found (see the `Opto` column above). Given the board carries 7 `P8243`
+**Every traced signal pin (all except power/ground) runs through at least
+one dedicated 4N26 optoisolator** — 13 confirmed so far (pin 4 touches two:
+#12 and #15), numbered in the order found (see the `Opto` column above).
+Given the board carries 7 `P8243`
 packages (see multi-chip caveat below), the real opto count across the
 whole connector is likely in the dozens — 12 is a lower bound, not a total.
 
@@ -197,6 +198,16 @@ there to clean up/debounce the opto's output edge (its NAND gates are
 Schmitt-trigger inputs) before it reaches CPU logic — worth checking
 whether it lands on a `P8243` port after the gate, or goes straight to an
 8035 port pin.
+
+**Pin 4 is a shared node across two optos, confirmed by continuity — not a
+signal-chain continuation.** The same physical DB25 pin 4 wire lands on
+*both* 4N26 #12 pin 2 (LED cathode) *and* 4N26 #15 pin 1 (LED anode). That's
+cathode-to-anode across two different packages on one net, which doesn't
+fit a simple "common ground return" or "common supply" bus (those would tie
+same-polarity legs together — several cathodes, or several anodes — not
+mix polarities). Worth checking what else shares this node before drawing
+conclusions about its role; it may be a bias/reference point specific to
+this pair of optos rather than a wider shared rail.
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
