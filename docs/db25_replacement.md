@@ -153,7 +153,8 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 1 | — | — | VCC |
 | 2 | — | — | GND |
 | 3 | — | — | VCC |
-| 4-7 | — | — | Not yet traced |
+| 4 | — (via `CD4093BFX`, TBD) | 4N26 #12 | Confirmed; LED cathode (pin 2), collector (pin 5) feeds a `CD4093BFX` NAND gate, downstream CPU/P8243 pin not yet traced |
+| 5-7 | — | — | Not yet traced |
 | 8 | — | — | GND |
 | 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
 | 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
@@ -172,17 +173,30 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 24 | `#1` pin 14 (`P71`) | 4N26 #3 | Candidate firmware match, see multi-chip caveat |
 | 25 | `#1` pin 1 (`P50`) | 4N26 #4 | Likely companion write to pin 22's pulse, see pin 25 note |
 
-**19 of 25 DB25 pins confirmed:** power/ground (VCC: 1, 3, 14, 16; GND: 2,
-8, 13, 15 — 8 pins), all 4 `P8243 #1` package pins (22, 23, 24, 25), and 6
-of 7 `P8243 #2` package pins (9, 10, 12, 19, 20, 21 — pin 11's exact
-package pin still open). The remaining 6 (4-7, 17-18, plus pin 11's package
-pin as a sub-detail) are still untraced.
+**20 of 25 DB25 pins confirmed:** power/ground (VCC: 1, 3, 14, 16; GND: 2,
+8, 13, 15 — 8 pins), all 4 `P8243 #1` package pins (22, 23, 24, 25), 6 of 7
+`P8243 #2` package pins (9, 10, 12, 19, 20, 21 — pin 11's exact package pin
+still open), and pin 4 (opto-isolated, but its far end lands on a
+`CD4093BFX` NAND gate rather than a `P8243` — see note below). The
+remaining 5 (5-7, 17-18, plus pin 11's package pin and pin 4's downstream
+CPU pin as sub-details) are still untraced.
 
 **Every traced signal pin (all except power/ground) runs through its own
-dedicated 4N26 optoisolator** — 11 confirmed so far, numbered in the order
+dedicated 4N26 optoisolator** — 12 confirmed so far, numbered in the order
 found (see the `Opto` column above). Given the board carries 7 `P8243`
 packages (see multi-chip caveat below), the real opto count across the
-whole connector is likely in the dozens — 11 is a lower bound, not a total.
+whole connector is likely in the dozens — 12 is a lower bound, not a total.
+
+**Pin 4 doesn't go straight to a `P8243`** — its opto's collector (4N26
+#12 pin 5) feeds a `CD4093BFX` (quad 2-input NAND, already on the parts
+list as glue logic) instead. Unlike pin 22's chain (CPU drives the LED
+locally, DB25 carries the isolated collector out), pin 4's LED side is
+what's on the DB25 — meaning the *backend* drives this opto, and the
+signal direction is inbound to the head unit. The `CD4093BFX` is plausibly
+there to clean up/debounce the opto's output edge (its NAND gates are
+Schmitt-trigger inputs) before it reaches CPU logic — worth checking
+whether it lands on a `P8243` port after the gate, or goes straight to an
+8035 port pin.
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
