@@ -148,55 +148,37 @@ sensor lines on one multiplexed measuring channel** (TH, TAK, THM, TAM, TAP, TS,
 plus the REF reference), the strobe/ready handshake pair, the actuator drives
 (VA1, VH, PAK I, PAK II), the LL/LE/AE status lines, and the VM/LVM pulse inputs.
 
-| DB25 pin | Signal | Notes |
-| --- | --- | --- |
-| 1 | VCC | Confirmed |
-| 2 | GND | Confirmed |
-| 3-7 | — | Not yet traced |
-| 8 | GND | Confirmed |
-| 9 | `P8243 #2` pin 22 (`P52`) | Confirmed; no firmware match found yet |
-| 10 | `P8243 #2` pin 23 (`P51`) | Confirmed; no firmware match found yet |
-| 11 | 4N26 #9 (LED anode) → `P8243 #2` (exact package pin TBD) | Confirmed; corrects earlier "P8243 pin 24 / VCC" misattribution |
-| 12 | 4N26 #8 pin 1 (LED anode) → `P8243 #2` pin 21 (`P53`) | Confirmed; corrects earlier "4N26 #2 / 005F" misattribution |
-| 13 | GND | Confirmed |
-| 14 | GND | Confirmed |
-| 15-18 | — | Not yet traced |
-| 19 | `P8243 #2` pin 19 (`P61`) | Confirmed; candidate firmware match, see multi-chip caveat |
-| 20 | `P8243 #2` pin 18 (`P62`) | Confirmed; candidate firmware match, see multi-chip caveat |
-| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed; same physical package as 9/10/11/12/19/20, see multi-chip caveat |
-| 22 | `P8243 #1` pin 16 (`P73`) → 4N26 #1 collector | Confirmed; pulsed actuator/status output, see opto driver chain |
-| 23 | `P8243 #1` pin 15 (`P72`) | Confirmed; fault/interlock input, see pin 23 note |
-| 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see multi-chip caveat |
-| 25 | `P8243 #1` pin 1 (`P50`) | Confirmed pin; likely companion write to pin 22's pulse, see pin 25 note |
+| DB25 pin | P8243 (chip, pin, name) | Opto | Notes |
+| --- | --- | --- | --- |
+| 1 | — | — | VCC |
+| 2 | — | — | GND |
+| 3-7 | — | — | Not yet traced |
+| 8 | — | — | GND |
+| 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
+| 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
+| 11 | `#2` pin TBD | 4N26 #9 | Corrects earlier "pin 24 / VCC" misattribution |
+| 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Corrects earlier "4N26 #2 / 005F" misattribution |
+| 13 | — | — | GND |
+| 14 | — | — | GND |
+| 15-18 | — | — | Not yet traced |
+| 19 | `#2` pin 19 (`P61`) | 4N26 #7 | Candidate firmware match, see multi-chip caveat |
+| 20 | `#2` pin 18 (`P62`) | 4N26 #6 | Candidate firmware match, see multi-chip caveat |
+| 21 | `#2` pin 17 (`P63`) | 4N26 #5 | Same physical package as 9/10/11/12/19/20, see multi-chip caveat |
+| 22 | `#1` pin 16 (`P73`) | 4N26 #1 | Pulsed actuator/status output, see opto driver chain |
+| 23 | `#1` pin 15 (`P72`) | 4N26 #2 | Fault/interlock input, see pin 23 note |
+| 24 | `#1` pin 14 (`P71`) | 4N26 #3 | Candidate firmware match, see multi-chip caveat |
+| 25 | `#1` pin 1 (`P50`) | 4N26 #4 | Likely companion write to pin 22's pulse, see pin 25 note |
 
-**11 pins now accounted for across two `P8243` chips:** `P8243 #1` (DB25
-pins 22→`P73`, 23→`P72`, 24→`P71`, 25→`P50`, all package pins identified)
-and `P8243 #2` (DB25 pins 9→`P52`, 10→`P51`, 11→TBD, 12→`P53`, 19→`P61`,
-20→`P62`, 21→`P63` — package pin for 11 still open after correcting the
-earlier VCC misattribution). Combined with the power/ground group (1, 2, 8,
-13, 14), that's **15 of 25 DB25 pins confirmed**; the remaining 10 (3-7,
-11's package pin, 15-18) are still open.
+**15 of 25 DB25 pins confirmed:** power/ground (1, 2, 8, 13, 14), all 4
+`P8243 #1` package pins (22, 23, 24, 25), and 6 of 7 `P8243 #2` package pins
+(9, 10, 12, 19, 20, 21 — pin 11's exact package pin still open). The
+remaining 10 (3-7, 11's package pin, 15-18) are still untraced.
 
-**All 11 pins run through their own dedicated 4N26 optoisolator** — the
-full DB25-pin-to-opto map, numbered in the order confirmed:
-
-| DB25 pin | 4N26 # |
-| --- | --- |
-| 22 | #1 |
-| 23 | #2 |
-| 24 | #3 |
-| 25 | #4 |
-| 21 | #5 |
-| 20 | #6 |
-| 19 | #7 |
-| 12 | #8 |
-| 11 | #9 |
-| 10 | #10 |
-| 9 | #11 |
-
-Given the board carries 7 `P8243` packages (see multi-chip caveat below),
-an opto-per-DB25-pin count in the dozens across the whole connector
-wouldn't be surprising — 11 confirmed so far is a lower bound, not a total.
+**Every traced signal pin (all except power/ground) runs through its own
+dedicated 4N26 optoisolator** — 11 confirmed so far, numbered in the order
+found (see the `Opto` column above). Given the board carries 7 `P8243`
+packages (see multi-chip caveat below), the real opto count across the
+whole connector is likely in the dozens — 11 is a lower bound, not a total.
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
