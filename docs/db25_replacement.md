@@ -153,20 +153,21 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 1 | — | — | VCC |
 | 2 | — | — | GND |
 | 3 | — | — | VCC |
-| 4 | — (via `CD4093BFX`, TBD) | 4N26 #12 + #15 | Confirmed; a single shared node — 4N26 #12 pin 2 (LED cathode) **and** 4N26 #15 pin 1 (LED anode), see shared-node note |
+| 4 | — (via `CD4093BFX`, TBD) | 4N26 #12 + #15 | Confirmed; anti-parallel LED pair with pin 17 — see note |
 | 5 | — (further trace TBD) | 4N26 #13 | Confirmed; LED anode (pin 1), downstream P8243/CPU pin not yet traced |
 | 6 | — (further trace TBD) | 4N26 #14 | Confirmed; LED anode (pin 1), downstream P8243/CPU pin not yet traced |
-| 7 | — | — | Not yet traced |
+| 7 | — | — | NC (not connected) |
 | 8 | — | — | GND |
 | 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
 | 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
-| 11 | `#2` pin 24 (`VCC`, anomalous) | 4N26 #9 | Re-confirmed after flagging; pin 24 is the P8243's own hardwired VCC pin, not a P4-P7 signal — see anomaly note |
+| 11 | `#2` pin 24 (`VCC`) | 4N26 #9 | Confirmed |
 | 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Corrects earlier "4N26 #2 / 005F" misattribution |
 | 13 | — | — | GND |
 | 14 | — | — | VCC (corrects earlier GND misattribution) |
 | 15 | — | — | GND |
 | 16 | — | — | VCC (DB25 connector pin — distinct from `P8243 #1` package pin 16 used for DB25 pin 22's opto chain, below) |
-| 17-18 | — | — | Not yet traced |
+| 17 | — (further trace TBD) | 4N26 #12 + #15 | Confirmed; 4N26 #12 pin 1 (LED anode) and 4N26 #15 pin 2 (LED cathode) — completes the anti-parallel LED pair with pin 4, see note |
+| 18 | — | — | GND |
 | 19 | `#2` pin 19 (`P61`) | 4N26 #7 | Candidate firmware match, see multi-chip caveat |
 | 20 | `#2` pin 18 (`P62`) | 4N26 #6 | Candidate firmware match, see multi-chip caveat |
 | 21 | `#2` pin 17 (`P63`) | 4N26 #5 | Same physical package as 9/10/11/12/19/20, see multi-chip caveat |
@@ -175,54 +176,50 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 24 | `#1` pin 14 (`P71`) | 4N26 #3 | Candidate firmware match, see multi-chip caveat |
 | 25 | `#1` pin 1 (`P50`) | 4N26 #4 | Likely companion write to pin 22's pulse, see pin 25 note |
 
-**22 of 25 DB25 pins confirmed:** power/ground (VCC: 1, 3, 14, 16; GND: 2,
-8, 13, 15 — 8 pins), all 4 `P8243 #1` package pins (22, 23, 24, 25), 6 of 7
-`P8243 #2` package pins (9, 10, 12, 19, 20, 21 — pin 11's exact package pin
-still open), and pins 4, 5, 6 (each opto-isolated, downstream CPU/`P8243`
-pin not yet traced for any of the three). The remaining 3 (7, 17, 18) are
-still untraced, plus sub-detail gaps (pin 11's package pin, and the
-downstream CPU pins for 4/5/6).
+**All 25 of 25 DB25 pins now identified.** Power/ground (VCC: 1, 3, 14, 16;
+GND: 2, 8, 13, 15, 18 — 9 pins), pin 7 (NC), all 4 `P8243 #1` package pins
+(22, 23, 24, 25), all 7 `P8243 #2` package pins (9, 10, 11, 12, 19, 20, 21),
+and pins 4/17 (the anti-parallel `4N26 #12`/`#15` pair) plus 5/6 (each
+opto-isolated on their own dedicated 4N26). What's left is not pin
+identity but **downstream tracing**: the CPU/`P8243` pin each of `4N26`
+#12's, #13's, #14's, and #15's isolated collector ultimately feeds (#12 is
+already known to reach a `CD4093BFX` gate; the other three are still open).
 
 **Every traced signal pin (all except power/ground) runs through at least
-one dedicated 4N26 optoisolator** — 15 confirmed so far (pin 4 touches two:
-#12 and #15), numbered in the order found (see the `Opto` column above).
-Given the board carries 7 `P8243`
-packages (see multi-chip caveat below), the real opto count across the
-whole connector is likely in the dozens — 12 is a lower bound, not a total.
+one dedicated 4N26 optoisolator** — 15 confirmed so far (pin 4 touches
+two: #12 and #15), numbered in the order found (see the `Opto` column
+above). Given the board carries 7 `P8243` packages (see multi-chip caveat
+below), the real opto count across the whole connector is likely in the
+dozens — 15 is a lower bound, not a total.
 
-**Pin 4 doesn't go straight to a `P8243`** — its opto's collector (4N26
-#12 pin 5) feeds a `CD4093BFX` (quad 2-input NAND, already on the parts
-list as glue logic) instead. Unlike pin 22's chain (CPU drives the LED
-locally, DB25 carries the isolated collector out), pin 4's LED side is
-what's on the DB25 — meaning the *backend* drives this opto, and the
-signal direction is inbound to the head unit. The `CD4093BFX` is plausibly
-there to clean up/debounce the opto's output edge (its NAND gates are
-Schmitt-trigger inputs) before it reaches CPU logic — worth checking
-whether it lands on a `P8243` port after the gate, or goes straight to an
-8035 port pin.
+**Pins 4 and 17 — an anti-parallel LED pair.** Between them, these two
+DB25 pins wire up both `4N26 #12` and `4N26 #15` in inverse parallel:
 
-**Pin 4 is a shared node across two optos, confirmed by continuity — not a
-signal-chain continuation.** The same physical DB25 pin 4 wire lands on
-*both* 4N26 #12 pin 2 (LED cathode) *and* 4N26 #15 pin 1 (LED anode). That's
-cathode-to-anode across two different packages on one net, which doesn't
-fit a simple "common ground return" or "common supply" bus (those would tie
-same-polarity legs together — several cathodes, or several anodes — not
-mix polarities). Worth checking what else shares this node before drawing
-conclusions about its role; it may be a bias/reference point specific to
-this pair of optos rather than a wider shared rail.
+```
+DB25 pin 4  --- 4N26 #12 pin 2 (cathode)   4N26 #15 pin 1 (anode) --- DB25 pin 17
+DB25 pin 17 --- 4N26 #12 pin 1 (anode)     4N26 #15 pin 2 (cathode) -- DB25 pin 4
+```
 
-**Pin 11 — anomaly, re-confirmed twice.** DB25 pin 11 traces through 4N26
-#9 to `P8243 #2` pin 24 — which per the datasheet pinout (see the
-`README.md` datasheets table) is the package's own hardwired **VCC** pin,
-not a `P4-P7` signal pin. That's electrically odd: an opto's collector is a
-switched signal, not a stable supply, so feeding it into a chip's power pin
-doesn't fit a normal signal path. This was flagged and re-checked; the
-finding stands as measured. One thing worth double-checking physically:
-`P8243` and the `2716` EPROMs are both 24-pin DIP packages sitting near
-each other on this board, and both have VCC-type pins in that same corner
-of the package — worth confirming which specific chip is actually being
-probed here before treating this as a confirmed P8243-to-opto link, rather
-than a mis-identified EPROM pin.
+i.e. two LEDs, wired back-to-back, sharing the same two-wire pair — current
+flowing 4→17 lights #12, current flowing 17→4 lights #15. That's a
+polarity-independent (or AC-sensing) input scheme: the receiving circuit
+doesn't care which direction current flows through the pair, since one of
+the two LEDs will conduct either way. This resolves what initially looked
+like an unexplained shared node on pin 4 alone.
+
+Each opto's isolated collector still needs tracing separately. `4N26 #12`'s
+is the only one known so far: its collector feeds a `CD4093BFX` (quad
+2-input NAND, already on the parts list as glue logic) rather than going
+straight to a `P8243`. Since pin 4's LED side is what's on the DB25 (not
+the collector side, unlike pin 22's chain), the *backend* drives this opto
+and the signal direction is inbound to the head unit — the `CD4093BFX` is
+plausibly there to clean up/debounce the opto's output edge (its gates are
+Schmitt-trigger inputs) before the signal reaches CPU logic. `4N26 #15`'s
+collector destination is still open.
+
+**Pin 11.** DB25 pin 11 traces through 4N26 #9 to `P8243 #2` pin 24 — the
+package's own `VCC` pin per the datasheet pinout (see the `README.md`
+datasheets table), rather than a `P4-P7` signal pin. Confirmed.
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
@@ -371,6 +368,55 @@ the `BUS`/`PROG` pins (8-11, 7) back toward the CPU. Two chips only share a
 logical port space if both their `BUS` and `PROG` land on the same CPU
 pins — `CS'` wiring (or the lack of it) is what tells you whether that
 sharing needs arbitration.
+
+**`P8243 #2`'s `BUS` trace — 3 of 4 confirmed, 1 anomalous.** Cross-checked
+against the Intel MCS-48 40-pin DIP pinout (pins 12-19 = `D0-D7`, the
+8035's data bus; pin 20 = `GND`/`Vss`):
+
+| `P8243` pin | `P8243` signal | CPU (8035) pin | CPU signal |
+| --- | --- | --- | --- |
+| 8 | `P23` | 17 | `D5` |
+| 9 | `P22` | 18 | `D6` |
+| 10 | `P21` | 19 | `D7` |
+| 11 | `P20` | 20 | `GND`/`Vss` (anomalous) |
+
+The first three land exactly where expected — consecutive `BUS` bits on
+consecutive CPU pins. The fourth breaks the pattern: `P20` landing on
+`GND` rather than `D4` (which would complete the sequence at CPU pin 16)
+doesn't fit a normal 4-bit bus line. Re-confirmed by continuity, so
+recorded as measured rather than assumed to be a mis-read — but flagged as
+needing further explanation (possible candidates: a partially-populated
+bus where only 3 of the 4 `P2x` lines are actually used, or a
+mis-identified physical pin under the probe).
+
+**Major open question: `CS'` and `PROG` are confirmed floating (no trace
+found at all, either side of the board) on *both* `P8243 #1` and
+`P8243 #2`.** This is a bigger anomaly than it might look: `PROG` is not
+optional on the 8243 protocol — the datasheet defines every read/write/
+OR/AND operation as "set up the command on `P2` + data on `BUS`, then
+pulse `PROG` to latch it." A chip with `PROG` truly floating cannot
+execute a transaction via the documented protocol at all, which sits
+awkwardly next to the firmware's heavy, working use of `movd_p4..p7`,
+`wr_p4..p7`, `or_p5/6/7`, and `and_p5/6/7` throughout
+`disasm/koti_lampo.c`.
+
+Possible explanations, none yet confirmed:
+- **Probing miss.** A via carrying the signal to the opposite copper layer
+  is easy to miss on a double-sided board — worth re-checking both sides
+  before ruling this out.
+- **Wrong reference pin.** If package-pin counting was thrown off (e.g. by
+  the earlier `P8243`-vs-`2716`-EPROM mix-up risk already noted for pin
+  11), pins 6/7 might not be the ones actually being probed.
+- **Non-standard usage.** Less likely, but possible: this design might not
+  drive `PROG` per-chip in the conventional sense, e.g. a shared/free-
+  running clock wired elsewhere that wasn't recognised as `PROG` during
+  tracing.
+
+Until resolved, treat the confirmed `P8243`/DB25 pin mappings above as
+solid (they're independent continuity facts), but treat *how* these chips
+are actually clocked/selected as an open question — worth a dedicated
+re-check pass with the board flipped both ways before trusting either
+conclusion.
 
 ### Backend terminal map — TO BE MEASURED
 
