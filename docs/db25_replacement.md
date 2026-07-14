@@ -171,10 +171,30 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 19 |  |  |  |  |
 | 20 |  |  |  |  |
 | 21 |  |  |  |  |
-| 22 |  |  |  |  |
+| 22 | 4N26 (first) pin 5 (collector) | Optoisolator output leg → actuator/status drive | `P8243` pin 16 (via resistor) | Confirmed; see opto driver chain below |
 | 23 |  |  |  |  |
 | 24 |  |  |  |  |
 | 25 |  |  |  |  |
+
+### Opto driver chain (confirmed pattern for pin 22, first 4N26)
+
+Tracing DB25 pin 22 found the full isolated signal path through the first
+4N26 on the board:
+
+```
+P8243 pin 16 --[resistor]--> 4N26 #1 pin 2 (LED cathode)
+                              4N26 #1 pin 1 (LED anode)  = VCC
+                              4N26 #1 pin 6 (output side) = GND
+                              4N26 #1 pin 5 (collector)  = DB25 pin 22
+```
+
+The CPU (via the `P8243` expander) sinks current through the LED to switch
+the opto; the isolated collector then drives DB25 pin 22 across the mains
+barrier. This is the same chain shape expected for every actuator/status
+line — useful as a template when tracing the remaining pins: find the
+resistor feeding an opto's LED cathode, work backward to the `P8243`/`P7`
+port bit for the firmware signal, and forward from the collector to the
+DB25 pin.
 
 ### Backend terminal map — TO BE MEASURED
 
