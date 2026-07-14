@@ -196,6 +196,25 @@ resistor feeding an opto's LED cathode, work backward to the `P8243`/`P7`
 port bit for the firmware signal, and forward from the collector to the
 DB25 pin.
 
+**Firmware match:** on the [P8243](../README.md#datasheets) 24-pin DIP, pin 16
+is **`P73`** — bit 3 (MSB) of Port 7 (`P70..P73` = pins 13-16). Bit `0x08` of
+P7 is set, briefly held, then cleared (a pulse) in
+`regulation_pass()` @ `X0224` (`disasm/koti_lampo.c:326-328`):
+
+```c
+u8 relays = X(0x15) | 0x08; wr_p7(relays);
+bank1_busy_delay();                          /* call X0cff */
+relays &= 0xFB; X(0x15) = relays; wr_p7(relays);
+```
+
+So DB25 pin 22 carries a **pulsed**, not level-held, actuator/status signal —
+consistent with the flow-pulse outputs `AE`/`LE` (energy metering, "blink
+once per kWh") rather than a level-held valve/relay line like `VA1`/`VH`.
+Next step: identify which XRAM[0x15] bits the *other* relay writes
+(`relay_clear_and_idle()` clears `0xFC` = bits 2-7) use, and match each to
+its own P7 pin (13/14/15/17-20 for P6, 21-23+1 for P5) and DB25 pin, to
+build out the rest of the actuator map.
+
 ### Backend terminal map — TO BE MEASURED
 
 Sensor types are no longer a question: `IO list.ods` confirms **all six
