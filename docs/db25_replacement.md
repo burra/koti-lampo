@@ -373,6 +373,26 @@ logical port space if both their `BUS` and `PROG` land on the same CPU
 pins — `CS'` wiring (or the lack of it) is what tells you whether that
 sharing needs arbitration.
 
+**`P8243 #2`'s `BUS` trace — 3 of 4 confirmed, 1 anomalous.** Cross-checked
+against the Intel MCS-48 40-pin DIP pinout (pins 12-19 = `D0-D7`, the
+8035's data bus; pin 20 = `GND`/`Vss`):
+
+| `P8243` pin | `P8243` signal | CPU (8035) pin | CPU signal |
+| --- | --- | --- | --- |
+| 8 | `P23` | 17 | `D5` |
+| 9 | `P22` | 18 | `D6` |
+| 10 | `P21` | 19 | `D7` |
+| 11 | `P20` | 20 | `GND`/`Vss` (anomalous) |
+
+The first three land exactly where expected — consecutive `BUS` bits on
+consecutive CPU pins. The fourth breaks the pattern: `P20` landing on
+`GND` rather than `D4` (which would complete the sequence at CPU pin 16)
+doesn't fit a normal 4-bit bus line. Re-confirmed by continuity, so
+recorded as measured rather than assumed to be a mis-read — but flagged as
+needing further explanation (possible candidates: a partially-populated
+bus where only 3 of the 4 `P2x` lines are actually used, or a
+mis-identified physical pin under the probe).
+
 ### Backend terminal map — TO BE MEASURED
 
 Sensor types are no longer a question: `IO list.ods` confirms **all six
