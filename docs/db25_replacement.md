@@ -154,26 +154,26 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 2 | GND | Confirmed |
 | 3-7 | — | Not yet traced |
 | 8 | GND | Confirmed |
-| 9 | `P8243 #2` (same package as 10/11/12/19/20/21) | Confirmed chip; exact package pin TBD |
-| 10 | `P8243 #2` (same package as 9/11/12/19/20/21) | Confirmed chip; exact package pin TBD |
-| 11 | `P8243 #2` (same package as 9/10/12/19/20/21) | Confirmed chip; exact package pin TBD |
+| 9 | `P8243 #2` pin 22 (`P52`) | Confirmed; no firmware match found yet |
+| 10 | `P8243 #2` pin 23 (`P51`) | Confirmed; no firmware match found yet |
+| 11 | `P8243 #2` pin 24 = **VCC** | Confirmed; second VCC pin (not a P5/P6/P7 signal) — explains the 4 separate GND pins (2/8/13/14), redundant power/ground contacts for current across a 7 m cable |
 | 12 | 4N26 #8 pin 1 (LED anode) → `P8243 #2` pin 21 (`P53`) | Confirmed; corrects earlier "4N26 #2 / 005F" misattribution |
 | 13 | GND | Confirmed |
 | 14 | GND | Confirmed |
 | 15-18 | — | Not yet traced |
-| 19 | `P8243 #2` (same package as 9/10/11/12/20/21) | Confirmed chip; exact package pin TBD |
-| 20 | `P8243 #2` (same package as 9/10/11/12/19/21) | Confirmed chip; exact package pin TBD |
+| 19 | `P8243 #2` pin 19 (`P61`) | Confirmed; candidate firmware match, see multi-chip caveat |
+| 20 | `P8243 #2` pin 18 (`P62`) | Confirmed; candidate firmware match, see multi-chip caveat |
 | 21 | `P8243 #2` pin 17 (`P63`) | Confirmed; same physical package as 9/10/11/12/19/20, see multi-chip caveat |
 | 22 | `P8243 #1` pin 16 (`P73`) → 4N26 #1 collector | Confirmed; pulsed actuator/status output, see opto driver chain |
 | 23 | `P8243 #1` pin 15 (`P72`) | Confirmed; fault/interlock input, see pin 23 note |
 | 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see multi-chip caveat |
 | 25 | `P8243 #1` pin 1 (`P50`) | Confirmed pin; likely companion write to pin 22's pulse, see pin 25 note |
 
-**11 pins now accounted for across two `P8243` chips:** `P8243 #1` (DB25
-pins 22, 23, 24, 25 — all 4 package pins identified) and `P8243 #2` (DB25
-pins 9, 10, 11, 12, 19, 20, 21 — package pins identified for 12 and 21, the
-remaining five confirmed to the same physical chip with exact package pins
-still TBD). Combined with the power/ground group (1, 2, 8, 13, 14), that's
+**11 pins now accounted for across two `P8243` chips, all package pins
+identified:** `P8243 #1` (DB25 pins 22→`P73`, 23→`P72`, 24→`P71`,
+25→`P50`) and `P8243 #2` (DB25 pins 9→`P52`, 10→`P51`, 11→**VCC**,
+12→`P53`, 19→`P61`, 20→`P62`, 21→`P63`). Combined with the power/ground
+group (1, 2, 8, 13, 14 — now 6 pins including 11's second VCC), that's
 **16 of 25 DB25 pins confirmed**; the remaining 9 (3-7, 15-18) are still
 untraced.
 
@@ -312,6 +312,12 @@ It reframes, rather than resolves, pins 21 and 24:
   `if (p7 & 0x02) { btn_inc(0x02, 0x18); ... }` still reads as a
   front-panel button, architecturally odd for a DB25/backend pin. Treat as
   unresolved regardless of the CS finding.
+- **Pins 19/20** (`P8243 #2` pins 19/18, `P61`/`P62`) have the same shape of
+  issue: candidate matches `if (p6 & 0x02) { btn_clock_adjust(); ... }` and
+  `if (p6 & 0x04) { btn_mode(); ... }` are both front-panel buttons in
+  `ext_interrupt()` — again architecturally odd for DB25/backend pins.
+  Treat as unresolved for the same reason as pin 24. Pins 9/10 (`P52`/`P51`)
+  have no candidate code match at all yet.
 
 **To resolve conclusively:** for each `P8243`, trace pin 6 (`CS'`) *and*
 the `BUS`/`PROG` pins (8-11, 7) back toward the CPU. Two chips only share a
@@ -340,7 +346,9 @@ is the *pinout* — which DB25 pin each lands on — not the sensor technology.
 ### How to take the measurements
 
 1. Power **off**, mains disconnected. The connector is **X1** on the PCB
-   silkscreen. **Pin 1 = VCC; pins 2, 8, 13, 14 = GND** (confirmed).
+   silkscreen. **Pins 1 and 11 = VCC; pins 2, 8, 13, 14 = GND** (confirmed) —
+   two VCC and four GND pins, consistent with power/ground redundancy across
+   a 7 m cable.
 2. Continuity from each remaining DB25 pin to: every 8035 port pin, each
    relay-driver transistor collector/base, transformer secondary, and GND/0V
    plane.
