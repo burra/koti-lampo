@@ -148,33 +148,22 @@ sensor lines on one multiplexed measuring channel** (TH, TAK, THM, TAM, TAP, TS,
 plus the REF reference), the strobe/ready handshake pair, the actuator drives
 (VA1, VH, PAK I, PAK II), the LL/LE/AE status lines, and the VM/LVM pulse inputs.
 
-| DB25 pin | Traced to (head-unit net) | Backend function | Firmware signal | Notes |
-| --- | --- | --- | --- | --- |
-| 1 | VCC | Power supply in | — | Confirmed |
-| 2 | GND | Ground | — | Confirmed |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
-| 6 |  |  |  |  |
-| 7 |  |  |  |  |
-| 8 | GND | Ground | — | Confirmed |
-| 9 |  |  |  |  |
-| 10 |  |  |  |  |
-| 11 |  |  |  |  |
-| 12 | 4N26 (second, marked "005F") pin 1 | Optoisolator LED-side leg | — | Confirmed; opto = galvanic isolation crossing to mains-side backend |
-| 13 | GND | Ground | — | Confirmed |
-| 14 | GND | Ground | — | Confirmed |
-| 15 |  |  |  |  |
-| 16 |  |  |  |  |
-| 17 |  |  |  |  |
-| 18 |  |  |  |  |
-| 19 |  |  |  |  |
-| 20 |  |  |  |  |
-| 21 |  |  |  |  |
-| 22 | 4N26 (first) pin 5 (collector) | Optoisolator output leg → actuator/status drive | `P8243` pin 16 (via resistor) | Confirmed; see opto driver chain below |
-| 23 | `P8243` pin 15 (`P72`) | Fault/interlock input (LIKELY) | `P7` bit `0x04`, read in `read_timing_channel()` and `ext_interrupt()` | Confirmed pin; direction+meaning inferred from firmware, see note below |
-| 24 |  |  |  |  |
-| 25 |  |  |  |  |
+| DB25 pin | Signal | Notes |
+| --- | --- | --- |
+| 1 | VCC | Confirmed |
+| 2 | GND | Confirmed |
+| 3-7 | — | Not yet traced |
+| 8 | GND | Confirmed |
+| 9-11 | — | Not yet traced |
+| 12 | 4N26 #2 pin 1 (LED anode) | Confirmed; isolator LED-side leg, see opto driver chain |
+| 13 | GND | Confirmed |
+| 14 | GND | Confirmed |
+| 15-20 | — | Not yet traced |
+| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed pin; on a **different physical P8243** than 22-25, see multi-chip caveat |
+| 22 | `P8243 #1` pin 16 (`P73`) → 4N26 #1 collector | Confirmed; pulsed actuator/status output, see opto driver chain |
+| 23 | `P8243 #1` pin 15 (`P72`) | Confirmed; fault/interlock input, see pin 23 note |
+| 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see multi-chip caveat |
+| 25 | `P8243 #1` pin 1 (`P50`) | Confirmed pin; likely companion write to pin 22's pulse, see pin 25 note |
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
@@ -209,7 +198,7 @@ relays &= 0xFB; X(0x15) = relays; wr_p7(relays);
 
 ### Pin 23 — likely a hard fault/interlock input (P73's neighbour, opposite direction)
 
-DB25 pin 23 traces to `P8243` pin 15, i.e. **`P72`** (bit `0x04` of the same
+DB25 pin 23 traces to `P8243 #1` pin 15, i.e. **`P72`** (bit `0x04` of the same
 `P7` port group as pin 22/`P73` above), but this bit is *read*, not written —
 `movd_p7()`, not `wr_p7()`. Two independent call sites treat it identically,
 as a hard fault:
@@ -241,6 +230,72 @@ Next step: identify which XRAM[0x15] bits the *other* relay writes
 (`relay_clear_and_idle()` clears `0xFC` = bits 2-7) use, and match each to
 its own P7 pin (13/14/15/17-20 for P6, 21-23+1 for P5) and DB25 pin, to
 build out the rest of the actuator map.
+
+### Pin 25 — likely companion write to pin 22's pulse
+
+DB25 pin 25 traces to `P8243 #1` pin 1, i.e. **`P50`** (bit 0 of Port 5).
+`regulation_pass()` sets this bit (`or_p5(0x01)`) on the very next line
+after the pin-22 pulse, under the same `P2 = 0xEF` strobe:
+
+```c
+u8 relays = X(0x15) | 0x08; wr_p7(relays);
+bank1_busy_delay();
+relays &= 0xFB; X(0x15) = relays; wr_p7(relays);
+P2 = 0xEF; or_p5(0x01);   /* <- DB25 pin 25 candidate */
+```
+
+Same function, same strobe, immediately adjacent — a reasonable case that
+this is a companion status/latch bit for the same actuator event as pin 22
+(e.g. "pulse done" or "select next stage"), and likely the **same physical
+chip** as pin 22/23.
+
+### Multi-chip caveat — the board has (at least) 7 P8243 packages, not 2
+
+Confirmed by inspection: **4 `P8243` on the bottom (CPU) board, 3 more on the
+top (front-panel) board.** `disasm/koti_lampo.c` predates this and models
+port access with one generic set of functions (`movd_p4..p7`, `wr_p4..p7`,
+`or_p5/6/7`, `and_p5/6/7`) with no per-chip distinction — so any single
+code-level match like "`P7` bit `0x02`" could in principle belong to *any*
+of the 7 packages, not just the two seen on the DB25 so far.
+
+**Important finding: the `P8243` serving DB25 pins 22-25 has its pin 6
+(`CS'`, chip select) not connected to anything** — no decode/select logic.
+On the 8243, `CS'` is a dedicated pin, separate from the shared 4-bit
+`PROG`-clocked command bus (`BUS` = `P20-P23`); with multiple 8243s on one
+shared bus, only the chip whose `CS'` is asserted may drive it back, so
+sharing a bus normally *requires* per-chip select logic (a plausible
+candidate already on the parts list: the **`MC14012B`** dual 4-input NAND,
+documented as board "glue logic"). A `CS'` wired to nothing implies the
+opposite: **this chip doesn't need arbitration because it isn't sharing its
+bus with anything** — i.e. this design most likely uses several independent
+`BUS`/`PROG` groups (plausibly one per board, or even one per chip-cluster)
+rather than one 7-way-decoded shared bus. That's a reasonable read of why
+there are 7 separate packages in the first place: simpler to give each
+functional group (front-panel keypad/display vs. CPU-board relay/sensor
+I/O) its own dedicated expansion bus than to build 7-way select decode.
+
+This is good news for the pins 22/23/25 findings: that chip isn't
+contending with anything, so the `P2` strobe values already matched against
+the code for it should be trustworthy as they stand.
+
+It reframes, rather than resolves, pins 21 and 24:
+
+- **Pin 21** (on a different physical package than 22-25, confirmed by
+  continuity) — next check is whether *its* `CS'` is also unconnected (own
+  dedicated bus, so the earlier "same `P2=0xAF` context" observation in
+  `ext_interrupt()` is coincidental naming, not evidence of sharing) or
+  wired to real decode logic (meaning it *does* share a bus with others,
+  and the decode line is what actually needs identifying — not `P2` alone).
+- **Pin 24** (`P8243 #1` pin 14, `P71`) — candidate match
+  `if (p7 & 0x02) { btn_inc(0x02, 0x18); ... }` still reads as a
+  front-panel button, architecturally odd for a DB25/backend pin. Treat as
+  unresolved regardless of the CS finding.
+
+**To resolve conclusively:** for each `P8243`, trace pin 6 (`CS'`) *and*
+the `BUS`/`PROG` pins (8-11, 7) back toward the CPU. Two chips only share a
+logical port space if both their `BUS` and `PROG` land on the same CPU
+pins — `CS'` wiring (or the lack of it) is what tells you whether that
+sharing needs arbitration.
 
 ### Backend terminal map — TO BE MEASURED
 
