@@ -148,34 +148,37 @@ sensor lines on one multiplexed measuring channel** (TH, TAK, THM, TAM, TAP, TS,
 plus the REF reference), the strobe/ready handshake pair, the actuator drives
 (VA1, VH, PAK I, PAK II), the LL/LE/AE status lines, and the VM/LVM pulse inputs.
 
-| DB25 pin | Signal | Notes |
-| --- | --- | --- |
-| 1 | VCC | Confirmed |
-| 2 | GND | Confirmed |
-| 3-7 | — | Not yet traced |
-| 8 | GND | Confirmed |
-| 9 | `P8243 #2` (same package as 10/11/12/19/20/21) | Confirmed chip; exact package pin TBD |
-| 10 | `P8243 #2` (same package as 9/11/12/19/20/21) | Confirmed chip; exact package pin TBD |
-| 11 | `P8243 #2` (same package as 9/10/12/19/20/21) | Confirmed chip; exact package pin TBD |
-| 12 | 4N26 #8 pin 1 (LED anode) → `P8243 #2` pin 21 (`P53`) | Confirmed; corrects earlier "4N26 #2 / 005F" misattribution |
-| 13 | GND | Confirmed |
-| 14 | GND | Confirmed |
-| 15-18 | — | Not yet traced |
-| 19 | `P8243 #2` (same package as 9/10/11/12/20/21) | Confirmed chip; exact package pin TBD |
-| 20 | `P8243 #2` (same package as 9/10/11/12/19/21) | Confirmed chip; exact package pin TBD |
-| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed; same physical package as 9/10/11/12/19/20, see multi-chip caveat |
-| 22 | `P8243 #1` pin 16 (`P73`) → 4N26 #1 collector | Confirmed; pulsed actuator/status output, see opto driver chain |
-| 23 | `P8243 #1` pin 15 (`P72`) | Confirmed; fault/interlock input, see pin 23 note |
-| 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see multi-chip caveat |
-| 25 | `P8243 #1` pin 1 (`P50`) | Confirmed pin; likely companion write to pin 22's pulse, see pin 25 note |
+| DB25 pin | P8243 (chip, pin, name) | Opto | Notes |
+| --- | --- | --- | --- |
+| 1 | — | — | VCC |
+| 2 | — | — | GND |
+| 3-7 | — | — | Not yet traced |
+| 8 | — | — | GND |
+| 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
+| 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
+| 11 | `#2` pin TBD | 4N26 #9 | Corrects earlier "pin 24 / VCC" misattribution |
+| 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Corrects earlier "4N26 #2 / 005F" misattribution |
+| 13 | — | — | GND |
+| 14 | — | — | GND |
+| 15-18 | — | — | Not yet traced |
+| 19 | `#2` pin 19 (`P61`) | 4N26 #7 | Candidate firmware match, see multi-chip caveat |
+| 20 | `#2` pin 18 (`P62`) | 4N26 #6 | Candidate firmware match, see multi-chip caveat |
+| 21 | `#2` pin 17 (`P63`) | 4N26 #5 | Same physical package as 9/10/11/12/19/20, see multi-chip caveat |
+| 22 | `#1` pin 16 (`P73`) | 4N26 #1 | Pulsed actuator/status output, see opto driver chain |
+| 23 | `#1` pin 15 (`P72`) | 4N26 #2 | Fault/interlock input, see pin 23 note |
+| 24 | `#1` pin 14 (`P71`) | 4N26 #3 | Candidate firmware match, see multi-chip caveat |
+| 25 | `#1` pin 1 (`P50`) | 4N26 #4 | Likely companion write to pin 22's pulse, see pin 25 note |
 
-**11 pins now accounted for across two `P8243` chips:** `P8243 #1` (DB25
-pins 22, 23, 24, 25 — all 4 package pins identified) and `P8243 #2` (DB25
-pins 9, 10, 11, 12, 19, 20, 21 — package pins identified for 12 and 21, the
-remaining five confirmed to the same physical chip with exact package pins
-still TBD). Combined with the power/ground group (1, 2, 8, 13, 14), that's
-**16 of 25 DB25 pins confirmed**; the remaining 9 (3-7, 15-18) are still
-untraced.
+**15 of 25 DB25 pins confirmed:** power/ground (1, 2, 8, 13, 14), all 4
+`P8243 #1` package pins (22, 23, 24, 25), and 6 of 7 `P8243 #2` package pins
+(9, 10, 12, 19, 20, 21 — pin 11's exact package pin still open). The
+remaining 10 (3-7, 11's package pin, 15-18) are still untraced.
+
+**Every traced signal pin (all except power/ground) runs through its own
+dedicated 4N26 optoisolator** — 11 confirmed so far, numbered in the order
+found (see the `Opto` column above). Given the board carries 7 `P8243`
+packages (see multi-chip caveat below), the real opto count across the
+whole connector is likely in the dozens — 11 is a lower bound, not a total.
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
@@ -312,6 +315,12 @@ It reframes, rather than resolves, pins 21 and 24:
   `if (p7 & 0x02) { btn_inc(0x02, 0x18); ... }` still reads as a
   front-panel button, architecturally odd for a DB25/backend pin. Treat as
   unresolved regardless of the CS finding.
+- **Pins 19/20** (`P8243 #2` pins 19/18, `P61`/`P62`) have the same shape of
+  issue: candidate matches `if (p6 & 0x02) { btn_clock_adjust(); ... }` and
+  `if (p6 & 0x04) { btn_mode(); ... }` are both front-panel buttons in
+  `ext_interrupt()` — again architecturally odd for DB25/backend pins.
+  Treat as unresolved for the same reason as pin 24. Pins 9/10 (`P52`/`P51`)
+  have no candidate code match at all yet.
 
 **To resolve conclusively:** for each `P8243`, trace pin 6 (`CS'`) *and*
 the `BUS`/`PROG` pins (8-11, 7) back toward the CPU. Two chips only share a
