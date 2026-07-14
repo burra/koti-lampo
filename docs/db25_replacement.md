@@ -148,33 +148,22 @@ sensor lines on one multiplexed measuring channel** (TH, TAK, THM, TAM, TAP, TS,
 plus the REF reference), the strobe/ready handshake pair, the actuator drives
 (VA1, VH, PAK I, PAK II), the LL/LE/AE status lines, and the VM/LVM pulse inputs.
 
-| DB25 pin | Traced to (head-unit net) | Backend function | Firmware signal | Notes |
-| --- | --- | --- | --- | --- |
-| 1 | VCC | Power supply in | — | Confirmed |
-| 2 | GND | Ground | — | Confirmed |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
-| 6 |  |  |  |  |
-| 7 |  |  |  |  |
-| 8 | GND | Ground | — | Confirmed |
-| 9 |  |  |  |  |
-| 10 |  |  |  |  |
-| 11 |  |  |  |  |
-| 12 | 4N26 (second, marked "005F") pin 1 | Optoisolator LED-side leg | — | Confirmed; opto = galvanic isolation crossing to mains-side backend |
-| 13 | GND | Ground | — | Confirmed |
-| 14 | GND | Ground | — | Confirmed |
-| 15 |  |  |  |  |
-| 16 |  |  |  |  |
-| 17 |  |  |  |  |
-| 18 |  |  |  |  |
-| 19 |  |  |  |  |
-| 20 |  |  |  |  |
-| 21 |  |  |  |  |
-| 22 | 4N26 (first) pin 5 (collector) | Optoisolator output leg → actuator/status drive | `P8243` pin 16 (via resistor) | Confirmed; see opto driver chain below |
-| 23 | `P8243` pin 15 (`P72`) | Fault/interlock input (LIKELY) | `P7` bit `0x04`, read in `read_timing_channel()` and `ext_interrupt()` | Confirmed pin; direction+meaning inferred from firmware, see note below |
-| 24 |  |  |  |  |
-| 25 |  |  |  |  |
+| DB25 pin | Signal | Notes |
+| --- | --- | --- |
+| 1 | VCC | Confirmed |
+| 2 | GND | Confirmed |
+| 3-7 | — | Not yet traced |
+| 8 | GND | Confirmed |
+| 9-11 | — | Not yet traced |
+| 12 | 4N26 #2 pin 1 (LED anode) | Confirmed; isolator LED-side leg, see opto driver chain |
+| 13 | GND | Confirmed |
+| 14 | GND | Confirmed |
+| 15-20 | — | Not yet traced |
+| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed pin; on a **different physical P8243** than 22-25, see two-chip caveat |
+| 22 | `P8243 #1` pin 16 (`P73`) → 4N26 #1 collector | Confirmed; pulsed actuator/status output, see opto driver chain |
+| 23 | `P8243 #1` pin 15 (`P72`) | Confirmed; fault/interlock input, see pin 23 note |
+| 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see two-chip caveat |
+| 25 | `P8243 #1` pin 1 (`P50`) | Confirmed pin; likely companion write to pin 22's pulse, see pin 25 note |
 
 ### Opto driver chain (confirmed pattern for pin 22, first 4N26)
 
@@ -209,7 +198,7 @@ relays &= 0xFB; X(0x15) = relays; wr_p7(relays);
 
 ### Pin 23 — likely a hard fault/interlock input (P73's neighbour, opposite direction)
 
-DB25 pin 23 traces to `P8243` pin 15, i.e. **`P72`** (bit `0x04` of the same
+DB25 pin 23 traces to `P8243 #1` pin 15, i.e. **`P72`** (bit `0x04` of the same
 `P7` port group as pin 22/`P73` above), but this bit is *read*, not written —
 `movd_p7()`, not `wr_p7()`. Two independent call sites treat it identically,
 as a hard fault:
@@ -241,6 +230,56 @@ Next step: identify which XRAM[0x15] bits the *other* relay writes
 (`relay_clear_and_idle()` clears `0xFC` = bits 2-7) use, and match each to
 its own P7 pin (13/14/15/17-20 for P6, 21-23+1 for P5) and DB25 pin, to
 build out the rest of the actuator map.
+
+### Pin 25 — likely companion write to pin 22's pulse
+
+DB25 pin 25 traces to `P8243 #1` pin 1, i.e. **`P50`** (bit 0 of Port 5).
+`regulation_pass()` sets this bit (`or_p5(0x01)`) on the very next line
+after the pin-22 pulse, under the same `P2 = 0xEF` strobe:
+
+```c
+u8 relays = X(0x15) | 0x08; wr_p7(relays);
+bank1_busy_delay();
+relays &= 0xFB; X(0x15) = relays; wr_p7(relays);
+P2 = 0xEF; or_p5(0x01);   /* <- DB25 pin 25 candidate */
+```
+
+Same function, same strobe, immediately adjacent — a reasonable case that
+this is a companion status/latch bit for the same actuator event as pin 22
+(e.g. "pulse done" or "select next stage"), and likely the **same physical
+chip** as pin 22/23.
+
+### Two-chip caveat — pins 21 and 24 need a disambiguation step
+
+`disasm/koti_lampo.c` was written before we knew the board carries **two**
+physical `P8243` packages. It models port access with one generic set of
+functions (`movd_p4..p7`, `wr_p4..p7`, `or_p5/6/7`, `and_p5/6/7`) with no
+per-chip distinction — so a match like "`P7` bit `0x02`" could belong to
+*either* physical chip, and the code alone can't tell them apart yet.
+
+This matters for pins 21 and 24:
+
+- **Pin 24** (`P8243 #1` pin 14, `P71`, bit `0x02` of P7) has a candidate
+  code match — `if (p7 & 0x02) { btn_inc(0x02, 0x18); ... }` in
+  `ext_interrupt()` — but that reads as a **front-panel button**, which is
+  architecturally odd for a pin that crosses the DB25 to the backend (the
+  front panel is local, wired by ribbon, not through X1 — see the photo
+  notes below). Likely a same-name collision with the *other* chip's code
+  path, not a real match. Treat as unresolved.
+- **Pin 21** (`P8243 #2` pin 17, `P63`) is on a different physical package
+  than pins 22-25 (confirmed by continuity), yet its only candidate code
+  match — `if (p6 & 0x08) { btn_start(); ... }` — sits in the *exact same*
+  `ext_interrupt()` loop, under the *same* `P2 = 0xAF` read strobe, as pin
+  23's fault-check. If that strobe really does select one specific physical
+  chip, pins 21 and 23 can't both be read through it — so either the strobe
+  doesn't uniquely select a chip (there's a separate, not-yet-modelled CS
+  line per package), or this candidate match is wrong. Treat as unresolved.
+
+**To resolve conclusively:** find each `P8243`'s pin 6 (`CS'`, chip select)
+and trace it back to whatever CPU/latch output enables that specific
+package. That per-chip CS line — not the `P2` page-strobe value alone — is
+what the reconstruction is currently missing, and until it's added, treat
+any `P8243 #2`-side firmware "match" as speculative.
 
 ### Backend terminal map — TO BE MEASURED
 
