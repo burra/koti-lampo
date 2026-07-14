@@ -176,12 +176,11 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 25 | `#1` pin 1 (`P50`) | 4N26 #4 | Likely companion write to pin 22's pulse, see pin 25 note |
 
 **22 of 25 DB25 pins confirmed:** power/ground (VCC: 1, 3, 14, 16; GND: 2,
-8, 13, 15 — 8 pins), all 4 `P8243 #1` package pins (22, 23, 24, 25), 6 of 7
-`P8243 #2` package pins (9, 10, 12, 19, 20, 21 — pin 11's exact package pin
-still open), and pins 4, 5, 6 (each opto-isolated, downstream CPU/`P8243`
-pin not yet traced for any of the three). The remaining 3 (7, 17, 18) are
-still untraced, plus sub-detail gaps (pin 11's package pin, and the
-downstream CPU pins for 4/5/6).
+8, 13, 15 — 8 pins), all 4 `P8243 #1` package pins (22, 23, 24, 25), all 7
+`P8243 #2` package pins (9, 10, 11, 12, 19, 20, 21), and pins 4, 5, 6
+(each opto-isolated, downstream CPU/`P8243` pin not yet traced for any of
+the three). The remaining 3 (7, 17, 18) are still untraced, plus a
+sub-detail gap: the downstream CPU pins for 4/5/6.
 
 **Every traced signal pin (all except power/ground) runs through at least
 one dedicated 4N26 optoisolator** — 15 confirmed so far (pin 4 touches two:
