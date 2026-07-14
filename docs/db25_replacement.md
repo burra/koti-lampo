@@ -154,7 +154,9 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 2 | — | — | GND |
 | 3 | — | — | VCC |
 | 4 | — (via `CD4093BFX`, TBD) | 4N26 #12 + #15 | Confirmed; a single shared node — 4N26 #12 pin 2 (LED cathode) **and** 4N26 #15 pin 1 (LED anode), see shared-node note |
-| 5-7 | — | — | Not yet traced |
+| 5 | — (further trace TBD) | 4N26 #13 | Confirmed; LED anode (pin 1), downstream P8243/CPU pin not yet traced |
+| 6 | — (further trace TBD) | 4N26 #14 | Confirmed; LED anode (pin 1), downstream P8243/CPU pin not yet traced |
+| 7 | — | — | Not yet traced |
 | 8 | — | — | GND |
 | 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
 | 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
@@ -173,16 +175,16 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 24 | `#1` pin 14 (`P71`) | 4N26 #3 | Candidate firmware match, see multi-chip caveat |
 | 25 | `#1` pin 1 (`P50`) | 4N26 #4 | Likely companion write to pin 22's pulse, see pin 25 note |
 
-**20 of 25 DB25 pins confirmed:** power/ground (VCC: 1, 3, 14, 16; GND: 2,
+**22 of 25 DB25 pins confirmed:** power/ground (VCC: 1, 3, 14, 16; GND: 2,
 8, 13, 15 — 8 pins), all 4 `P8243 #1` package pins (22, 23, 24, 25), 6 of 7
 `P8243 #2` package pins (9, 10, 12, 19, 20, 21 — pin 11's exact package pin
-still open), and pin 4 (opto-isolated, but its far end lands on a
-`CD4093BFX` NAND gate rather than a `P8243` — see note below). The
-remaining 5 (5-7, 17-18, plus pin 11's package pin and pin 4's downstream
-CPU pin as sub-details) are still untraced.
+still open), and pins 4, 5, 6 (each opto-isolated, downstream CPU/`P8243`
+pin not yet traced for any of the three). The remaining 3 (7, 17, 18) are
+still untraced, plus sub-detail gaps (pin 11's package pin, and the
+downstream CPU pins for 4/5/6).
 
 **Every traced signal pin (all except power/ground) runs through at least
-one dedicated 4N26 optoisolator** — 13 confirmed so far (pin 4 touches two:
+one dedicated 4N26 optoisolator** — 15 confirmed so far (pin 4 touches two:
 #12 and #15), numbered in the order found (see the `Opto` column above).
 Given the board carries 7 `P8243`
 packages (see multi-chip caveat below), the real opto count across the
