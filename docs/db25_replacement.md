@@ -154,12 +154,16 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 2 | GND | Confirmed |
 | 3-7 | — | Not yet traced |
 | 8 | GND | Confirmed |
-| 9-11 | — | Not yet traced |
-| 12 | 4N26 #2 pin 1 (LED anode) | Confirmed; isolator LED-side leg, see opto driver chain |
+| 9 | — | Not yet traced |
+| 10 | `P8243 #2` (same package as 11/12/19/20/21) | Confirmed chip; exact package pin TBD |
+| 11 | `P8243 #2` (same package as 10/12/19/20/21) | Confirmed chip; exact package pin TBD |
+| 12 | 4N26 #8 pin 1 (LED anode) → `P8243 #2` pin 21 (`P53`) | Confirmed; corrects earlier "4N26 #2 / 005F" misattribution |
 | 13 | GND | Confirmed |
 | 14 | GND | Confirmed |
-| 15-20 | — | Not yet traced |
-| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed pin; on a **different physical P8243** than 22-25, see multi-chip caveat |
+| 15-18 | — | Not yet traced |
+| 19 | `P8243 #2` (same package as 10/11/12/20/21) | Confirmed chip; exact package pin TBD |
+| 20 | `P8243 #2` (same package as 10/11/12/19/21) | Confirmed chip; exact package pin TBD |
+| 21 | `P8243 #2` pin 17 (`P63`) | Confirmed; same physical package as 10/11/12/19/20, see multi-chip caveat |
 | 22 | `P8243 #1` pin 16 (`P73`) → 4N26 #1 collector | Confirmed; pulsed actuator/status output, see opto driver chain |
 | 23 | `P8243 #1` pin 15 (`P72`) | Confirmed; fault/interlock input, see pin 23 note |
 | 24 | `P8243 #1` pin 14 (`P71`) | Confirmed pin; candidate firmware match, see multi-chip caveat |
@@ -184,6 +188,16 @@ line — useful as a template when tracing the remaining pins: find the
 resistor feeding an opto's LED cathode, work backward to the `P8243`/`P7`
 port bit for the firmware signal, and forward from the collector to the
 DB25 pin.
+
+**Correction — pin 12 and the real 4N26 count.** DB25 pin 12 was earlier
+misattributed to "4N26 #2 (marked 005F)". It's actually **4N26 #8**, LED
+anode side, continuing on to `P8243 #2` pin 21 (`P53`) — the same physical
+`P8243` package that also serves DB25 pins 10, 11, 19, 20, and 21 (exact
+package pins for 10/11/19/20 still TBD). Given the board turned out to
+carry 7 `P8243` packages rather than 2 (see multi-chip caveat below), the
+4N26 count is likely similarly larger than the "two" first assumed — treat
+any `4N26 #N` label in this doc as an id from continuity tracing, not a
+claim about total quantity on the board.
 
 **Firmware match:** on the [P8243](../README.md#datasheets) 24-pin DIP, pin 16
 is **`P73`** — bit 3 (MSB) of Port 7 (`P70..P73` = pins 13-16). Bit `0x08` of
