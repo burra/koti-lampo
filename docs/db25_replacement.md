@@ -172,7 +172,7 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 20 |  |  |  |  |
 | 21 |  |  |  |  |
 | 22 | 4N26 (first) pin 5 (collector) | Optoisolator output leg → actuator/status drive | `P8243` pin 16 (via resistor) | Confirmed; see opto driver chain below |
-| 23 |  |  |  |  |
+| 23 | `P8243` pin 15 (`P72`) | Fault/interlock input (LIKELY) | `P7` bit `0x04`, read in `read_timing_channel()` and `ext_interrupt()` | Confirmed pin; direction+meaning inferred from firmware, see note below |
 | 24 |  |  |  |  |
 | 25 |  |  |  |  |
 
@@ -206,6 +206,33 @@ u8 relays = X(0x15) | 0x08; wr_p7(relays);
 bank1_busy_delay();                          /* call X0cff */
 relays &= 0xFB; X(0x15) = relays; wr_p7(relays);
 ```
+
+### Pin 23 — likely a hard fault/interlock input (P73's neighbour, opposite direction)
+
+DB25 pin 23 traces to `P8243` pin 15, i.e. **`P72`** (bit `0x04` of the same
+`P7` port group as pin 22/`P73` above), but this bit is *read*, not written —
+`movd_p7()`, not `wr_p7()`. Two independent call sites treat it identically,
+as a hard fault:
+
+```c
+// read_timing_channel() @ X01eb — analog measurement poll
+if (movd_p7() & 0x04) { P2 &= 0x7F; for (;;) {} }  /* fault hang */
+
+// ext_interrupt() @ X04ff — button/panel scan
+if (p7 & 0x04) { for (;;) { P2 &= 0x7F; } }  /* fault hang */
+```
+
+Both deliberately lock the CPU in an infinite loop if the bit is set —
+consistent with a hard-wired safety interlock, not routine status. It also
+fits `io_init()`'s startup sequence (`or_p7(0xFF)` then `and_p7(0x00)`,
+i.e. P7 starts actively driven **low** by the CPU): the 8243's ports are
+quasi-bidirectional (weak pull, overridable by a stronger external drive),
+so the likely picture is the CPU normally holds this line low and some
+backend condition (high-limit thermostat, overtemperature cutout, or a
+power-supply fault line) can force it high, overriding the CPU's weak pull —
+detected on the next poll and treated as unrecoverable. This would be
+independent of the software fault logic already documented in the manuals
+(`TAP<5°C`, `TAM-TAP>1°C`, etc.) — a second, hardware-level safety layer.
 
 So DB25 pin 22 carries a **pulsed**, not level-held, actuator/status signal —
 consistent with the flow-pulse outputs `AE`/`LE` (energy metering, "blink
