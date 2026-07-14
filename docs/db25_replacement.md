@@ -393,6 +393,35 @@ needing further explanation (possible candidates: a partially-populated
 bus where only 3 of the 4 `P2x` lines are actually used, or a
 mis-identified physical pin under the probe).
 
+**Major open question: `CS'` and `PROG` are confirmed floating (no trace
+found at all, either side of the board) on *both* `P8243 #1` and
+`P8243 #2`.** This is a bigger anomaly than it might look: `PROG` is not
+optional on the 8243 protocol — the datasheet defines every read/write/
+OR/AND operation as "set up the command on `P2` + data on `BUS`, then
+pulse `PROG` to latch it." A chip with `PROG` truly floating cannot
+execute a transaction via the documented protocol at all, which sits
+awkwardly next to the firmware's heavy, working use of `movd_p4..p7`,
+`wr_p4..p7`, `or_p5/6/7`, and `and_p5/6/7` throughout
+`disasm/koti_lampo.c`.
+
+Possible explanations, none yet confirmed:
+- **Probing miss.** A via carrying the signal to the opposite copper layer
+  is easy to miss on a double-sided board — worth re-checking both sides
+  before ruling this out.
+- **Wrong reference pin.** If package-pin counting was thrown off (e.g. by
+  the earlier `P8243`-vs-`2716`-EPROM mix-up risk already noted for pin
+  11), pins 6/7 might not be the ones actually being probed.
+- **Non-standard usage.** Less likely, but possible: this design might not
+  drive `PROG` per-chip in the conventional sense, e.g. a shared/free-
+  running clock wired elsewhere that wasn't recognised as `PROG` during
+  tracing.
+
+Until resolved, treat the confirmed `P8243`/DB25 pin mappings above as
+solid (they're independent continuity facts), but treat *how* these chips
+are actually clocked/selected as an open question — worth a dedicated
+re-check pass with the board flipped both ways before trusting either
+conclusion.
+
 ### Backend terminal map — TO BE MEASURED
 
 Sensor types are no longer a question: `IO list.ods` confirms **all six
