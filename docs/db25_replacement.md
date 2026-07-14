@@ -153,7 +153,7 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 1 | — | — | VCC |
 | 2 | — | — | GND |
 | 3 | — | — | VCC |
-| 4 | — (via `CD4093BFX`, TBD) | 4N26 #12 + #15 | Confirmed; a single shared node — 4N26 #12 pin 2 (LED cathode) **and** 4N26 #15 pin 1 (LED anode), see shared-node note |
+| 4 | — (via `CD4093BFX`, TBD) | 4N26 #12 + #15 | Confirmed; anti-parallel LED pair with pin 17 — see note |
 | 5 | — (further trace TBD) | 4N26 #13 | Confirmed; LED anode (pin 1), downstream P8243/CPU pin not yet traced |
 | 6 | — (further trace TBD) | 4N26 #14 | Confirmed; LED anode (pin 1), downstream P8243/CPU pin not yet traced |
 | 7 | — | — | NC (not connected) |
@@ -166,7 +166,7 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 14 | — | — | VCC (corrects earlier GND misattribution) |
 | 15 | — | — | GND |
 | 16 | — | — | VCC (DB25 connector pin — distinct from `P8243 #1` package pin 16 used for DB25 pin 22's opto chain, below) |
-| 17 | — | — | Not yet traced |
+| 17 | — (further trace TBD) | 4N26 #12 + #15 | Confirmed; 4N26 #12 pin 1 (LED anode) and 4N26 #15 pin 2 (LED cathode) — completes the anti-parallel LED pair with pin 4, see note |
 | 18 | — | — | GND |
 | 19 | `#2` pin 19 (`P61`) | 4N26 #7 | Candidate firmware match, see multi-chip caveat |
 | 20 | `#2` pin 18 (`P62`) | 4N26 #6 | Candidate firmware match, see multi-chip caveat |
@@ -176,12 +176,14 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 24 | `#1` pin 14 (`P71`) | 4N26 #3 | Candidate firmware match, see multi-chip caveat |
 | 25 | `#1` pin 1 (`P50`) | 4N26 #4 | Likely companion write to pin 22's pulse, see pin 25 note |
 
-**24 of 25 DB25 pins confirmed:** power/ground (VCC: 1, 3, 14, 16; GND: 2,
-8, 13, 15, 18 — 9 pins), pin 7 (NC), all 4 `P8243 #1` package pins (22, 23,
-24, 25), all 7 `P8243 #2` package pins (9, 10, 11, 12, 19, 20, 21), and
-pins 4, 5, 6 (each opto-isolated, downstream CPU/`P8243` pin not yet traced
-for any of the three). Only **pin 17** remains completely untraced, plus a
-sub-detail gap: the downstream CPU pins for 4/5/6.
+**All 25 of 25 DB25 pins now identified.** Power/ground (VCC: 1, 3, 14, 16;
+GND: 2, 8, 13, 15, 18 — 9 pins), pin 7 (NC), all 4 `P8243 #1` package pins
+(22, 23, 24, 25), all 7 `P8243 #2` package pins (9, 10, 11, 12, 19, 20, 21),
+and pins 4/17 (the anti-parallel `4N26 #12`/`#15` pair) plus 5/6 (each
+opto-isolated on their own dedicated 4N26). What's left is not pin
+identity but **downstream tracing**: the CPU/`P8243` pin each of `4N26`
+#12's, #13's, #14's, and #15's isolated collector ultimately feeds (#12 is
+already known to reach a `CD4093BFX` gate; the other three are still open).
 
 **Every traced signal pin (all except power/ground) runs through at least
 one dedicated 4N26 optoisolator** — 15 confirmed so far (pin 4 touches two:
@@ -201,15 +203,23 @@ Schmitt-trigger inputs) before it reaches CPU logic — worth checking
 whether it lands on a `P8243` port after the gate, or goes straight to an
 8035 port pin.
 
-**Pin 4 is a shared node across two optos, confirmed by continuity — not a
-signal-chain continuation.** The same physical DB25 pin 4 wire lands on
-*both* 4N26 #12 pin 2 (LED cathode) *and* 4N26 #15 pin 1 (LED anode). That's
-cathode-to-anode across two different packages on one net, which doesn't
-fit a simple "common ground return" or "common supply" bus (those would tie
-same-polarity legs together — several cathodes, or several anodes — not
-mix polarities). Worth checking what else shares this node before drawing
-conclusions about its role; it may be a bias/reference point specific to
-this pair of optos rather than a wider shared rail.
+**Pins 4 and 17 — resolved: an anti-parallel LED pair.** Between them,
+these two DB25 pins wire up both `4N26 #12` and `4N26 #15` in inverse
+parallel:
+
+```
+DB25 pin 4  --- 4N26 #12 pin 2 (cathode)   4N26 #15 pin 1 (anode) --- DB25 pin 17
+DB25 pin 17 --- 4N26 #12 pin 1 (anode)     4N26 #15 pin 2 (cathode) -- DB25 pin 4
+```
+
+i.e. two LEDs, wired back-to-back, sharing the same two-wire pair — current
+flowing DB25-4→17 lights #12, current flowing 17→4 lights #15. That's a
+polarity-independent (or AC-sensing) input scheme: the receiving circuit
+doesn't care which direction current flows through the pair, since one of
+the two LEDs will conduct either way. This resolves what initially looked
+like an unexplained shared node on pin 4 alone. Each opto's isolated
+collector still needs tracing separately — #12's is already known to feed
+a `CD4093BFX` gate; #15's destination is still open.
 
 **Pin 11.** DB25 pin 11 traces through 4N26 #9 to `P8243 #2` pin 24 — the
 package's own `VCC` pin per the datasheet pinout (see the `README.md`
