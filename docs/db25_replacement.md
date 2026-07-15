@@ -478,6 +478,28 @@ ESP32"). The only blocker is the physical pinout, which needs the meter.
 What is visible in each photo and the exact probing to do. Record results in the
 DB25 and backend tables above. **Mains disconnected for all continuity steps.**
 
+### Physical chip naming convention (no factory silkscreen refdes on this board)
+
+This board has no per-component reference designators printed on the
+silkscreen, so chips are referred to by **`<part>-<board><n>`**, e.g.
+`P8243-B1`, `4N26-B12`:
+- `<part>` — the part number (`P8243`, `4N26`, `CD4093BFX`, `MC14013BC`, …).
+- `<board>` — `B` for the bottom/CPU board, `T` for the top/front-panel board.
+- `<n>` — a locally-assigned index, numbered by physical position (e.g. the
+  15 `4N26` optoisolators on the bottom board are `4N26-B1`..`4N26-B15`,
+  left-to-right along the row visible in the labeled photo below).
+
+### `pic/bottom_pcb_component_side_labeled.jpg` — annotated chip reference
+
+Component-side photo with physical positions marked: `4N26` optoisolators
+1-15 (red), `P8243` I/O expanders `#1`/`#2` (blue — **`#1`'s identity is
+still unresolved**, see "Multi-chip caveat" above), `CD4093BFX`/`C1`
+(orange), `MC14013BC`/`D1` (teal), the `P8035L` CPU (purple), and both
+EPROMs `A98EH`/`3EF2H` (green). Built iteratively against the physical
+board with real-time corrections; still open: two more `P8243` packages
+visible near the relay bank and near the top-right pots, not yet assigned
+`#3`/`#4`.
+
 ### `pic/bottom_pcb.jpg` — CPU board, solder/component side
 Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic
 windowed), the 40-pin 8035, several DIP logic ICs, a bank of relays/optos on the
