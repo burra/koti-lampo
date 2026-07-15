@@ -369,25 +369,30 @@ logical port space if both their `BUS` and `PROG` land on the same CPU
 pins — `CS'` wiring (or the lack of it) is what tells you whether that
 sharing needs arbitration.
 
-**`P8243 #2`'s `BUS` trace — 3 of 4 confirmed, 1 anomalous.** Cross-checked
-against the Intel MCS-48 40-pin DIP pinout (pins 12-19 = `D0-D7`, the
-8035's data bus; pin 20 = `GND`/`Vss`):
+**`P8243 #2`'s connection to the CPU — corrected, and it's not the `BUS`.**
+Two rounds of correction on the original reading. Cross-checked against the
+Intel MCS-48 40-pin DIP pinout (pins 27-34 = `P10-P17`; pins 35-38 =
+`P24-P27`; pin 39 = `T1`; pin 40 = `Vcc`):
 
 | `P8243` pin | `P8243` signal | CPU (8035) pin | CPU signal |
 | --- | --- | --- | --- |
-| 8 | `P23` | 17 | `D5` |
-| 9 | `P22` | 18 | `D6` |
-| 10 | `P21` | 19 | `D7` |
-| 11 | `P20` | 20 | `GND`/`Vss` (anomalous) |
+| 8 | `P23` | 37 | `P26` |
+| 9 | `P22` | 38 | `P27` |
+| 10 | `P21` | 39 | `T1` |
+| 11 | `P20` | 40 | `Vcc` |
 
-The first three land exactly where expected — consecutive `BUS` bits on
-consecutive CPU pins. The fourth breaks the pattern: `P20` landing on
-`GND` rather than `D4` (which would complete the sequence at CPU pin 16)
-doesn't fit a normal 4-bit bus line. Re-confirmed by continuity, so
-recorded as measured rather than assumed to be a mis-read — but flagged as
-needing further explanation (possible candidates: a partially-populated
-bus where only 3 of the 4 `P2x` lines are actually used, or a
-mis-identified physical pin under the probe).
+Originally read as landing on CPU pins 17-20 (`D5-D7` + `GND`) — a plausible
+match to the standard 8243 `BUS` (`P20-P23` → the CPU's 8-bit data bus) that
+turned out to be wrong on re-measurement. The corrected landing (CPU pins
+37-40) is **not** the data bus at all — it's the CPU's own `P26`/`P27` (top
+two bits of the CPU's Port 2) and `T1`, plus the `Vcc` pull-up already noted
+for pin 11. That means this chip is **not wired per the standard 8243
+protocol** (command nibble + `PROG` clock over `P20-P23`) — it's instead
+tied directly to individual CPU port/timer pins. Combined with the earlier
+finding that `CS'` and `PROG` are both floating (see below), this points
+toward `P8243 #2` not actually being clocked as a conventional I/O-expander
+transaction at all; worth reconsidering what protocol (if any) is really in
+use here, rather than assuming standard 8243 operation.
 
 **Major open question: `CS'` and `PROG` are confirmed floating (no trace
 found at all, either side of the board) on *both* `P8243 #1` and
@@ -417,6 +422,58 @@ solid (they're independent continuity facts), but treat *how* these chips
 are actually clocked/selected as an open question — worth a dedicated
 re-check pass with the board flipped both ways before trusting either
 conclusion.
+
+### Physical chip identification (no factory silkscreen on this board)
+
+This board has no per-component reference designators printed anywhere —
+only manufacturer part numbers on the chips themselves and one board
+assembly number (`A68583-K`). Since numbers like "`P8243 #2`" only exist in
+this doc's tracing notes, a labeled reference photo is the only durable way
+to know which physical chip a label refers to. Component naming convention:
+`<part>-<board><n>` (e.g. `P8243-B1`), board = `B` (bottom/CPU) or `T`
+(top/front-panel), `n` assigned by discovery/sweep order.
+
+**`P8243 #2` (the `B0010`-marked chip near the `X2` connector and the
+rectangular window) is now physically confirmed**, not just inferred: a row
+of **7 resistors** sits directly between the opto row and this chip's
+leftmost pins — matching exactly the 7 DB25 pins already documented for
+this chip (9, 10, 11, 12, 19, 20, 21), one resistor per opto-driven line.
+
+**`P8243 #1` is not yet physically confirmed and needs re-checking.** It
+was assigned to DB25 pins 22-25 during early continuity tracing, before any
+photo-based physical identification existed. A later attempt to physically
+locate it landed on the `B0048`-marked chip near the round pots — but that
+chip is far (~1750px) from where pin 22's resistor was subsequently traced
+to (immediately right of the opto row, below `P8243 #2`, near a dense glue-
+logic cluster — `SN74LS138N`, `MC14012BAL`, `CD4025BCJ`, and four
+`MC14013BC` chips). A `P8243` chip physically consistent with *that*
+location has not yet been found in the photos; either it's just outside
+the frames captured so far, or the `B0048` identification for "`#1`" is
+wrong and needs correcting once re-measured at the board.
+
+### P8243 #2 → CPU connection
+
+Photo inspection shows a bundle of parallel traces running from `P8243 #2`
+(`B0010`), curving around the right edge of the rectangular window, straight
+down to the `P8035L` CPU's pin row — a short, direct run consistent with the
+already-documented `BUS` connection (package pins 8-11 → CPU pins 17-20).
+Bundle-level topology checks out; individual pin-for-pin routing within that
+tight bundle isn't reliably distinguishable by eye, so this is a plausibility
+check, not independent pin-level confirmation of the earlier meter readings.
+
+**`SN74LS138N` (3-to-8 decoder) sits immediately next to `P8243 #2`, output
+pins fanning out the same direction (toward the CPU/`P8243` area) — a strong
+candidate for generating the `CS'`/`PROG` signals** flagged as mysteriously
+floating in the multi-chip caveat above.
+
+**Confirmed: `P8243 #2` package pin 12 (`GND` per the datasheet) connects
+to `SN74LS138N` pins 4 and 5 — nothing else measurable.** On the '138, pins
+4/5 are `G2A'`/`G2B'`, its two active-low enable inputs. Grounding both just
+permanently enables the decoder — a mundane tie-off, not an active control
+signal. Doesn't yet confirm or refute the `CS'`/`PROG` hypothesis on its
+own; the useful next check is the decoder's **select inputs** (`A0-A2`,
+package pins 1-3) and **outputs** (`Y0-Y7`, pins 7/9-15) — whichever output
+is active would identify which chip(s) it's selecting.
 
 ### Backend terminal map — TO BE MEASURED
 
