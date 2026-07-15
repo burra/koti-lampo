@@ -369,28 +369,30 @@ logical port space if both their `BUS` and `PROG` land on the same CPU
 pins — `CS'` wiring (or the lack of it) is what tells you whether that
 sharing needs arbitration.
 
-**`P8243 #2`'s `BUS` trace — 3 of 4 confirmed, 1 corrected.** Cross-checked
-against the Intel MCS-48 40-pin DIP pinout (pins 12-19 = `D0-D7`, the
-8035's data bus; pin 40 = `Vcc`):
+**`P8243 #2`'s connection to the CPU — corrected, and it's not the `BUS`.**
+Two rounds of correction on the original reading. Cross-checked against the
+Intel MCS-48 40-pin DIP pinout (pins 27-34 = `P10-P17`; pins 35-38 =
+`P24-P27`; pin 39 = `T1`; pin 40 = `Vcc`):
 
 | `P8243` pin | `P8243` signal | CPU (8035) pin | CPU signal |
 | --- | --- | --- | --- |
-| 8 | `P23` | 17 | `D5` |
-| 9 | `P22` | 18 | `D6` |
-| 10 | `P21` | 19 | `D7` |
-| 11 | `P20` | 40 | `Vcc` (corrected — see below) |
+| 8 | `P23` | 37 | `P26` |
+| 9 | `P22` | 38 | `P27` |
+| 10 | `P21` | 39 | `T1` |
+| 11 | `P20` | 40 | `Vcc` |
 
-The first three land exactly where expected — consecutive `BUS` bits on
-consecutive CPU pins. The fourth was originally read as landing on CPU pin
-20 (`GND`), which didn't fit a normal 4-bit bus line and was flagged as an
-open anomaly. Re-measured: it actually lands on **CPU pin 40 (`Vcc`)**, not
-pin 20. This resolves the anomaly cleanly — `P20` most likely isn't a
-genuinely used `BUS` bit; tying an unused digital input to `Vcc` (a pull-up,
-preventing it floating) is standard practice, not exotic. Photo inspection
-shows this trace running through the resistor cluster right of the
-rectangular window, near the `SN74LS138N` — consistent with, but not
-independently pin-verified against, the earlier bundle-level check of
-`P8243 #2`'s CPU connection.
+Originally read as landing on CPU pins 17-20 (`D5-D7` + `GND`) — a plausible
+match to the standard 8243 `BUS` (`P20-P23` → the CPU's 8-bit data bus) that
+turned out to be wrong on re-measurement. The corrected landing (CPU pins
+37-40) is **not** the data bus at all — it's the CPU's own `P26`/`P27` (top
+two bits of the CPU's Port 2) and `T1`, plus the `Vcc` pull-up already noted
+for pin 11. That means this chip is **not wired per the standard 8243
+protocol** (command nibble + `PROG` clock over `P20-P23`) — it's instead
+tied directly to individual CPU port/timer pins. Combined with the earlier
+finding that `CS'` and `PROG` are both floating (see below), this points
+toward `P8243 #2` not actually being clocked as a conventional I/O-expander
+transaction at all; worth reconsidering what protocol (if any) is really in
+use here, rather than assuming standard 8243 operation.
 
 **Major open question: `CS'` and `PROG` are confirmed floating (no trace
 found at all, either side of the board) on *both* `P8243 #1` and
