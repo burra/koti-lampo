@@ -478,12 +478,60 @@ ESP32"). The only blocker is the physical pinout, which needs the meter.
 What is visible in each photo and the exact probing to do. Record results in the
 DB25 and backend tables above. **Mains disconnected for all continuity steps.**
 
+### Physical chip naming convention (no factory silkscreen refdes on this board)
+
+This board has no per-component reference designators printed on the
+silkscreen, so chips are referred to by **`<part>-<board><n>`**, e.g.
+`P8243-B1`, `4N26-B12`:
+- `<part>` — the part number (`P8243`, `4N26`, `CD4093BFX`, `MC14013BC`, …).
+- `<board>` — `B` for the bottom/CPU board, `T` for the top/front-panel board.
+- `<n>` — a locally-assigned index, numbered by physical position (e.g. the
+  15 `4N26` optoisolators on the bottom board are `4N26-B1`..`4N26-B15`,
+  left-to-right along the row visible in the interactive chip map below).
+
+**Correction:** the row of black components running along the CPU's
+right side (previously mis-described here as a "relay bank") is not
+relays — it's a row of **front-panel pushbuttons**, mounted on this
+board but operated through the case from the top plate (the weekday /
+setback-time buttons etc. in the `LÄMPÖTILAN ALENNUSAJAT` matrix and
+similar). They wire into `P8243 #3`/`#4`, which aren't traced yet.
+
+**`P8243 #3`'s neighbours:** the two round "SEUFER"-branded components
+next to it (top-right corner of the board) are **rotary switches**
+(numbered/detented position switches), not trimmer potentiometers —
+consistent with `P8243` being digital I/O only (no ADC). Likely wired
+into `#3` alongside the button row; not traced yet.
+
+(A static labeled reference photo used to live here; superseded by the
+interactive chip map below, which covers every IC and stays easier to
+keep in sync.)
+
+### `docs/bottom_pcb_chip_map.html` — interactive chip map
+
+Every IC on the board's component side, marked as toggleable SVG layers
+over `pic/bottom_pcb_component_side.jpg` so any category can be isolated
+while tracing: optos, all 4 `P8243`s (`#1`-`#4`, only `#1`/`#2` traced so
+far), glue logic (`CD4093BFX` C1-C3, `MC14013BC` D1-D5), CPU, EPROMs,
+`MC14040BA` counters, `SN74LS138N`/`139N` decoders, misc gates
+(`MC14012BAL`, `CD4025BCJ`, `CD4023BF`, `ECD4011BE` x2), analog
+(`HEF4066AE` x2, `LM239J`), keypad/display drivers (`MC14518BAL` x6,
+`MC14508BCL` x2), memory/IO (`P8212`, `MCM51L01P45` x2 — confirmed at the
+board). Passive/mechanical parts (resonator, trimmer pots, rotary
+switches, relays, discretes) are intentionally not marked.
+
+Open the file directly in a browser — it loads the photo via a relative
+path, so keep it next to `pic/`. If `bottom_pcb_component_side.jpg` is
+ever re-cropped, the marker coordinates in the `<script>` block need
+regenerating to match (they're pixel coordinates against that exact
+image).
+
 ### `pic/bottom_pcb.jpg` — CPU board, solder/component side
 Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic
-windowed), the 40-pin 8035, several DIP logic ICs, a bank of relays/optos on the
-right, two trimmer pots (top right), and the resonator/crystal. The DB25 is the
-only off-board connector on this side — every cable to the backend goes through
-it.
+windowed), the 40-pin 8035, several DIP logic ICs, a row of front-panel
+pushbuttons (operated from the top plate — weekday/setback buttons etc.,
+wired to `P8243 #3`/`#4`, not the same as relays) on the right, two trimmer
+pots (top right), and the resonator/crystal. The DB25 is the only off-board
+connector on this side — every cable to the backend goes through it.
 
 Probe list:
 1. **Find DB25 pin 1.** Look for a `1` on the silkscreen or the shell key; D-sub
