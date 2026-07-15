@@ -369,25 +369,28 @@ logical port space if both their `BUS` and `PROG` land on the same CPU
 pins — `CS'` wiring (or the lack of it) is what tells you whether that
 sharing needs arbitration.
 
-**`P8243 #2`'s `BUS` trace — 3 of 4 confirmed, 1 anomalous.** Cross-checked
+**`P8243 #2`'s `BUS` trace — 3 of 4 confirmed, 1 corrected.** Cross-checked
 against the Intel MCS-48 40-pin DIP pinout (pins 12-19 = `D0-D7`, the
-8035's data bus; pin 20 = `GND`/`Vss`):
+8035's data bus; pin 40 = `Vcc`):
 
 | `P8243` pin | `P8243` signal | CPU (8035) pin | CPU signal |
 | --- | --- | --- | --- |
 | 8 | `P23` | 17 | `D5` |
 | 9 | `P22` | 18 | `D6` |
 | 10 | `P21` | 19 | `D7` |
-| 11 | `P20` | 20 | `GND`/`Vss` (anomalous) |
+| 11 | `P20` | 40 | `Vcc` (corrected — see below) |
 
 The first three land exactly where expected — consecutive `BUS` bits on
-consecutive CPU pins. The fourth breaks the pattern: `P20` landing on
-`GND` rather than `D4` (which would complete the sequence at CPU pin 16)
-doesn't fit a normal 4-bit bus line. Re-confirmed by continuity, so
-recorded as measured rather than assumed to be a mis-read — but flagged as
-needing further explanation (possible candidates: a partially-populated
-bus where only 3 of the 4 `P2x` lines are actually used, or a
-mis-identified physical pin under the probe).
+consecutive CPU pins. The fourth was originally read as landing on CPU pin
+20 (`GND`), which didn't fit a normal 4-bit bus line and was flagged as an
+open anomaly. Re-measured: it actually lands on **CPU pin 40 (`Vcc`)**, not
+pin 20. This resolves the anomaly cleanly — `P20` most likely isn't a
+genuinely used `BUS` bit; tying an unused digital input to `Vcc` (a pull-up,
+preventing it floating) is standard practice, not exotic. Photo inspection
+shows this trace running through the resistor cluster right of the
+rectangular window, near the `SN74LS138N` — consistent with, but not
+independently pin-verified against, the earlier bundle-level check of
+`P8243 #2`'s CPU connection.
 
 **Major open question: `CS'` and `PROG` are confirmed floating (no trace
 found at all, either side of the board) on *both* `P8243 #1` and
