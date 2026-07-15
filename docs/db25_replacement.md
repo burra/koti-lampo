@@ -487,18 +487,7 @@ silkscreen, so chips are referred to by **`<part>-<board><n>`**, e.g.
 - `<board>` — `B` for the bottom/CPU board, `T` for the top/front-panel board.
 - `<n>` — a locally-assigned index, numbered by physical position (e.g. the
   15 `4N26` optoisolators on the bottom board are `4N26-B1`..`4N26-B15`,
-  left-to-right along the row visible in the labeled photo below).
-
-### `pic/bottom_pcb_component_side_labeled.jpg` — annotated chip reference
-
-Component-side photo with physical positions marked: `4N26` optoisolators
-1-15 (red), `P8243` I/O expanders `#1`/`#2` (blue — **`#1`'s identity is
-still unresolved**, see "Multi-chip caveat" above), `CD4093BFX`/`C1`
-(orange), `MC14013BC`/`D1` (teal), the `P8035L` CPU (purple), and both
-EPROMs `A98EH`/`3EF2H` (green). Built iteratively against the physical
-board with real-time corrections; still open: two more `P8243` packages,
-`#3`/`#4`, found near the front-panel button row and near the top-right
-pots (see below).
+  left-to-right along the row visible in the interactive chip map below).
 
 **Correction:** the row of black components running along the CPU's
 right side (previously mis-described here as a "relay bank") is not
@@ -506,6 +495,16 @@ relays — it's a row of **front-panel pushbuttons**, mounted on this
 board but operated through the case from the top plate (the weekday /
 setback-time buttons etc. in the `LÄMPÖTILAN ALENNUSAJAT` matrix and
 similar). They wire into `P8243 #3`/`#4`, which aren't traced yet.
+
+**`P8243 #3`'s neighbours:** the two round "SEUFER"-branded components
+next to it (top-right corner of the board) are **rotary switches**
+(numbered/detented position switches), not trimmer potentiometers —
+consistent with `P8243` being digital I/O only (no ADC). Likely wired
+into `#3` alongside the button row; not traced yet.
+
+(A static labeled reference photo used to live here; superseded by the
+interactive chip map below, which covers every IC and stays easier to
+keep in sync.)
 
 ### `docs/bottom_pcb_chip_map.html` — interactive chip map
 
