@@ -500,6 +500,16 @@ board with real-time corrections; still open: two more `P8243` packages
 visible near the relay bank and near the top-right pots, not yet assigned
 `#3`/`#4`.
 
+### `docs/bottom_pcb_chip_map.html` — interactive chip map
+
+Same markers as the static labeled photo above, but as toggleable SVG
+layers over `pic/bottom_pcb_component_side.jpg` (checkboxes per category:
+optos, `P8243`s, glue logic, CPU, EPROMs) so a category can be isolated
+while tracing. Open the file directly in a browser — it loads the photo
+via a relative path, so keep it next to `pic/`. If `bottom_pcb_component_side.jpg`
+is ever re-cropped, the marker coordinates in the `<script>` block need
+regenerating to match (they're pixel coordinates against that exact image).
+
 ### `pic/bottom_pcb.jpg` — CPU board, solder/component side
 Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic
 windowed), the 40-pin 8035, several DIP logic ICs, a bank of relays/optos on the
