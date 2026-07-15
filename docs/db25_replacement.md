@@ -446,6 +446,30 @@ location has not yet been found in the photos; either it's just outside
 the frames captured so far, or the `B0048` identification for "`#1`" is
 wrong and needs correcting once re-measured at the board.
 
+### P8243 #2 → CPU connection
+
+Photo inspection shows a bundle of parallel traces running from `P8243 #2`
+(`B0010`), curving around the right edge of the rectangular window, straight
+down to the `P8035L` CPU's pin row — a short, direct run consistent with the
+already-documented `BUS` connection (package pins 8-11 → CPU pins 17-20).
+Bundle-level topology checks out; individual pin-for-pin routing within that
+tight bundle isn't reliably distinguishable by eye, so this is a plausibility
+check, not independent pin-level confirmation of the earlier meter readings.
+
+**`SN74LS138N` (3-to-8 decoder) sits immediately next to `P8243 #2`, output
+pins fanning out the same direction (toward the CPU/`P8243` area) — a strong
+candidate for generating the `CS'`/`PROG` signals** flagged as mysteriously
+floating in the multi-chip caveat above.
+
+**Confirmed: `P8243 #2` package pin 12 (`GND` per the datasheet) connects
+to `SN74LS138N` pins 4 and 5 — nothing else measurable.** On the '138, pins
+4/5 are `G2A'`/`G2B'`, its two active-low enable inputs. Grounding both just
+permanently enables the decoder — a mundane tie-off, not an active control
+signal. Doesn't yet confirm or refute the `CS'`/`PROG` hypothesis on its
+own; the useful next check is the decoder's **select inputs** (`A0-A2`,
+package pins 1-3) and **outputs** (`Y0-Y7`, pins 7/9-15) — whichever output
+is active would identify which chip(s) it's selecting.
+
 ### Backend terminal map — TO BE MEASURED
 
 Sensor types are no longer a question: `IO list.ods` confirms **all six
