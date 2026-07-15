@@ -502,13 +502,23 @@ visible near the relay bank and near the top-right pots, not yet assigned
 
 ### `docs/bottom_pcb_chip_map.html` — interactive chip map
 
-Same markers as the static labeled photo above, but as toggleable SVG
-layers over `pic/bottom_pcb_component_side.jpg` (checkboxes per category:
-optos, `P8243`s, glue logic, CPU, EPROMs) so a category can be isolated
-while tracing. Open the file directly in a browser — it loads the photo
-via a relative path, so keep it next to `pic/`. If `bottom_pcb_component_side.jpg`
-is ever re-cropped, the marker coordinates in the `<script>` block need
-regenerating to match (they're pixel coordinates against that exact image).
+Every IC on the board's component side, marked as toggleable SVG layers
+over `pic/bottom_pcb_component_side.jpg` so any category can be isolated
+while tracing: optos, all 4 `P8243`s (`#1`-`#4`, only `#1`/`#2` traced so
+far), glue logic (`CD4093BFX` C1-C3, `MC14013BC` D1-D5), CPU, EPROMs,
+`MC14040BA` counters, `SN74LS138N`/`139N` decoders, misc gates
+(`MC14012BAL`, `CD4025BCJ`, `CD4023BF`, `ECD4011BE` x2), analog
+(`HEF4066AE` x2, `LM239J`), keypad/display drivers (`MC14518BAL` x6,
+`MC14508BCL` x2), memory/IO (`P8212`, `MCM51L01P45`), and one unidentified
+24-pin chip (label obscured by glare/wear in the photo — re-check at the
+board). Passive/mechanical parts (resonator, trimmer pots, rotary
+switches, relays, discretes) are intentionally not marked.
+
+Open the file directly in a browser — it loads the photo via a relative
+path, so keep it next to `pic/`. If `bottom_pcb_component_side.jpg` is
+ever re-cropped, the marker coordinates in the `<script>` block need
+regenerating to match (they're pixel coordinates against that exact
+image).
 
 ### `pic/bottom_pcb.jpg` — CPU board, solder/component side
 Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic

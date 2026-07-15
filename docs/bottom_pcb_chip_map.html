@@ -51,14 +51,40 @@
     <g class="layer" data-layer="eprom">
       <!-- 2716 EPROMs -->
     </g>
+    <g class="layer" data-layer="counters">
+      <!-- MC14040BA x2 -->
+    </g>
+    <g class="layer" data-layer="decoders">
+      <!-- SN74LS138N, SN74LS139N -->
+    </g>
+    <g class="layer" data-layer="gates">
+      <!-- MC14012BAL, CD4025BCJ, CD4023BF, ECD4011BE x2 -->
+    </g>
+    <g class="layer" data-layer="analog">
+      <!-- HEF4066AE x2, LM239J -->
+    </g>
+    <g class="layer" data-layer="keypad">
+      <!-- MC14518BAL x6, MC14508BCL x2 -->
+    </g>
+    <g class="layer" data-layer="memio">
+      <!-- P8212, MCM51L01P45 -->
+    </g>
+    <g class="layer" data-layer="unclear">
+      <!-- unlabeled chip -->
+    </g>
   </svg>
   <img src="../pic/bottom_pcb_component_side.jpg" alt="Bottom PCB component side">
 </div>
 
 <p class="note">
   Open questions still tracked in <code>db25_replacement.md</code>: <code>P8243-B1</code>'s
-  identity needs re-confirming at the board, and two more <code>P8243</code> packages
-  (near the relay bank and the top-right pots) aren't assigned an index yet.
+  identity needs re-confirming at the board. <code>P3</code>/<code>P4</code> are the two
+  previously-unindexed <code>P8243</code> packages (near the top-right pots and the
+  relay bank) — positions marked but not yet traced. One 24-pin chip between
+  <code>MCM51L01P45</code> and <code>P4</code> has a label too worn/glare-obscured to
+  read from the photo (marked <code>?</code>, white dot) — if you can read it off the
+  board, let me know and I'll add it properly. Passive/mechanical parts (resonator,
+  trimmer pots, rotary switches, relays, discretes) aren't marked — only ICs.
 </p>
 
 <script>
@@ -70,18 +96,49 @@ const LAYERS = {
     [164.3,227.9,'12'],[205.3,227.8,'13'],[246.4,227.8,'14'],
     [209.1,284.2,'15'],
   ]},
-  p8243:  { color: '#0047ff', label: 'P8243 I/O expander (#1, #2)', points: [
+  p8243:  { color: '#0047ff', label: 'P8243 I/O expander (#1-#4)', points: [
     [808.8,123.7,'P2'],[1331.3,349.7,'P1'],
+    [1333,117,'P3'],[1517,571,'P4'],
   ]},
-  glue:   { color: null, label: 'Glue logic (C1 / D1)', points: [
+  glue:   { color: null, label: 'Glue logic: CD4093BFX (C) / MC14013BC (D)', points: [
     [351.7,220.5,'C1', '#ffa500'],
     [1172.5,351.7,'D1', '#008080'],
+    [167,387,'C2', '#ffa500'],
+    [190,457,'C3', '#ffa500'],
+    [290,387,'D2', '#008080'],
+    [1067,173,'D3', '#008080'],
+    [1183,170,'D4', '#008080'],
+    [1067,359,'D5', '#008080'],
   ]},
   cpu:    { color: '#800080', label: 'P8035L CPU', points: [
     [627.3,438.9,'CPU'],
   ]},
   eprom:  { color: '#008000', label: '2716 EPROM (A98EH, 3EF2H)', points: [
     [805.6,581.7,'A98EH'],[1014.0,581.6,'3EF2H'],
+  ]},
+  counters: { color: '#ffeb3b', label: 'MC14040BA counter', points: [
+    [667,233,'1'],[667,287,'2'],
+  ]},
+  decoders: { color: '#00bcd4', label: 'Decoders (SN74LS138N / 139N)', points: [
+    [950,177,'138'],[543,323,'139'],
+  ]},
+  gates: { color: '#e91e63', label: 'Gates (4012/4025/4023/ECD4011)', points: [
+    [1067,263,'4012'],[917,359,'4025'],[433,384,'4023'],
+    [543,253,'e1'],[190,584,'e2'],
+  ]},
+  analog: { color: '#8bc34a', label: 'Analog (HEF4066AE / LM239J)', points: [
+    [316,333,'66-1'],[430,323,'66-2'],[440,253,'239'],
+  ]},
+  keypad: { color: '#3f51b5', label: 'MC14518BAL / MC14508BCL', points: [
+    [83,457,'K1'],[83,517,'K2'],[83,584,'K3'],[83,647,'K4'],
+    [190,517,'K5'],[190,647,'K6'],
+    [417,471,'S1'],[417,597,'S2'],
+  ]},
+  memio: { color: '#607d8b', label: 'P8212 / MCM51L01P45', points: [
+    [617,581,'8212'],[1160,581,'101'],
+  ]},
+  unclear: { color: '#ffffff', label: 'Unidentified — label unreadable', points: [
+    [1355,557,'?'],
   ]},
 };
 
