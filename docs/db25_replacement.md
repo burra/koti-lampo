@@ -525,6 +525,21 @@ ever re-cropped, the marker coordinates in the `<script>` block need
 regenerating to match (they're pixel coordinates against that exact
 image).
 
+### `pic/bottom_pcb_both_sides_overlay.jpg` — both copper layers combined
+
+Both sides of the bottom PCB combined into one image: **green = component
+side, magenta = solder side**; where a trace exists on both layers at the
+same spot it reads white/bright. Built by finding the same physical
+mounting holes (plus the 25×30mm rectangular window) on both full-res
+photos, solving a perspective transform to warp the solder-side photo
+into the component-side photo's pixel space, then combining both as
+grayscale into separate color channels. Useful for following a trace
+that changes layers via a via, without flipping between two photos.
+
+Not pixel-aligned with `bottom_pcb_component_side.jpg` or the interactive
+chip map — it's a separate crop/warp, built straight from the original
+full-resolution photos.
+
 ### `pic/bottom_pcb.jpg` — CPU board, solder/component side
 Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic
 windowed), the 40-pin 8035, several DIP logic ICs, a row of front-panel
