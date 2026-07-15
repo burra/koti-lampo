@@ -496,9 +496,16 @@ Component-side photo with physical positions marked: `4N26` optoisolators
 still unresolved**, see "Multi-chip caveat" above), `CD4093BFX`/`C1`
 (orange), `MC14013BC`/`D1` (teal), the `P8035L` CPU (purple), and both
 EPROMs `A98EH`/`3EF2H` (green). Built iteratively against the physical
-board with real-time corrections; still open: two more `P8243` packages
-visible near the relay bank and near the top-right pots, not yet assigned
-`#3`/`#4`.
+board with real-time corrections; still open: two more `P8243` packages,
+`#3`/`#4`, found near the front-panel button row and near the top-right
+pots (see below).
+
+**Correction:** the row of black components running along the CPU's
+right side (previously mis-described here as a "relay bank") is not
+relays — it's a row of **front-panel pushbuttons**, mounted on this
+board but operated through the case from the top plate (the weekday /
+setback-time buttons etc. in the `LÄMPÖTILAN ALENNUSAJAT` matrix and
+similar). They wire into `P8243 #3`/`#4`, which aren't traced yet.
 
 ### `docs/bottom_pcb_chip_map.html` — interactive chip map
 
@@ -521,10 +528,11 @@ image).
 
 ### `pic/bottom_pcb.jpg` — CPU board, solder/component side
 Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic
-windowed), the 40-pin 8035, several DIP logic ICs, a bank of relays/optos on the
-right, two trimmer pots (top right), and the resonator/crystal. The DB25 is the
-only off-board connector on this side — every cable to the backend goes through
-it.
+windowed), the 40-pin 8035, several DIP logic ICs, a row of front-panel
+pushbuttons (operated from the top plate — weekday/setback buttons etc.,
+wired to `P8243 #3`/`#4`, not the same as relays) on the right, two trimmer
+pots (top right), and the resonator/crystal. The DB25 is the only off-board
+connector on this side — every cable to the backend goes through it.
 
 Probe list:
 1. **Find DB25 pin 1.** Look for a `1` on the silkscreen or the shell key; D-sub
