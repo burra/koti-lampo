@@ -67,10 +67,7 @@
       <!-- MC14518BAL x6, MC14508BCL x2 -->
     </g>
     <g class="layer" data-layer="memio">
-      <!-- P8212, MCM51L01P45 -->
-    </g>
-    <g class="layer" data-layer="unclear">
-      <!-- unlabeled chip -->
+      <!-- P8212, MCM51L01P45 x2 -->
     </g>
   </svg>
   <img src="../pic/bottom_pcb_component_side.jpg" alt="Bottom PCB component side">
@@ -80,11 +77,9 @@
   Open questions still tracked in <code>db25_replacement.md</code>: <code>P8243-B1</code>'s
   identity needs re-confirming at the board. <code>P3</code>/<code>P4</code> are the two
   previously-unindexed <code>P8243</code> packages (near the top-right pots and the
-  relay bank) — positions marked but not yet traced. One 24-pin chip between
-  <code>MCM51L01P45</code> and <code>P4</code> has a label too worn/glare-obscured to
-  read from the photo (marked <code>?</code>, white dot) — if you can read it off the
-  board, let me know and I'll add it properly. Passive/mechanical parts (resonator,
-  trimmer pots, rotary switches, relays, discretes) aren't marked — only ICs.
+  relay bank) — positions marked but not yet traced. Passive/mechanical parts
+  (resonator, trimmer pots, rotary switches, relays, discretes) aren't marked —
+  only ICs.
 </p>
 
 <script>
@@ -135,10 +130,7 @@ const LAYERS = {
     [417,471,'S1'],[417,597,'S2'],
   ]},
   memio: { color: '#607d8b', label: 'P8212 / MCM51L01P45', points: [
-    [617,581,'8212'],[1160,581,'101'],
-  ]},
-  unclear: { color: '#ffffff', label: 'Unidentified — label unreadable', points: [
-    [1355,557,'?'],
+    [617,581,'8212'],[1160,581,'101-1'],[1355,557,'101-2'],
   ]},
 };
 

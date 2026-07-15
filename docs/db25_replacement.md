@@ -509,8 +509,7 @@ far), glue logic (`CD4093BFX` C1-C3, `MC14013BC` D1-D5), CPU, EPROMs,
 `MC14040BA` counters, `SN74LS138N`/`139N` decoders, misc gates
 (`MC14012BAL`, `CD4025BCJ`, `CD4023BF`, `ECD4011BE` x2), analog
 (`HEF4066AE` x2, `LM239J`), keypad/display drivers (`MC14518BAL` x6,
-`MC14508BCL` x2), memory/IO (`P8212`, `MCM51L01P45`), and one unidentified
-24-pin chip (label obscured by glare/wear in the photo — re-check at the
+`MC14508BCL` x2), memory/IO (`P8212`, `MCM51L01P45` x2 — confirmed at the
 board). Passive/mechanical parts (resonator, trimmer pots, rotary
 switches, relays, discretes) are intentionally not marked.
 
