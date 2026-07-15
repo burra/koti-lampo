@@ -418,6 +418,34 @@ are actually clocked/selected as an open question — worth a dedicated
 re-check pass with the board flipped both ways before trusting either
 conclusion.
 
+### Physical chip identification (no factory silkscreen on this board)
+
+This board has no per-component reference designators printed anywhere —
+only manufacturer part numbers on the chips themselves and one board
+assembly number (`A68583-K`). Since numbers like "`P8243 #2`" only exist in
+this doc's tracing notes, a labeled reference photo is the only durable way
+to know which physical chip a label refers to. Component naming convention:
+`<part>-<board><n>` (e.g. `P8243-B1`), board = `B` (bottom/CPU) or `T`
+(top/front-panel), `n` assigned by discovery/sweep order.
+
+**`P8243 #2` (the `B0010`-marked chip near the `X2` connector and the
+rectangular window) is now physically confirmed**, not just inferred: a row
+of **7 resistors** sits directly between the opto row and this chip's
+leftmost pins — matching exactly the 7 DB25 pins already documented for
+this chip (9, 10, 11, 12, 19, 20, 21), one resistor per opto-driven line.
+
+**`P8243 #1` is not yet physically confirmed and needs re-checking.** It
+was assigned to DB25 pins 22-25 during early continuity tracing, before any
+photo-based physical identification existed. A later attempt to physically
+locate it landed on the `B0048`-marked chip near the round pots — but that
+chip is far (~1750px) from where pin 22's resistor was subsequently traced
+to (immediately right of the opto row, below `P8243 #2`, near a dense glue-
+logic cluster — `SN74LS138N`, `MC14012BAL`, `CD4025BCJ`, and four
+`MC14013BC` chips). A `P8243` chip physically consistent with *that*
+location has not yet been found in the photos; either it's just outside
+the frames captured so far, or the `B0048` identification for "`#1`" is
+wrong and needs correcting once re-measured at the board.
+
 ### Backend terminal map — TO BE MEASURED
 
 Sensor types are no longer a question: `IO list.ods` confirms **all six
