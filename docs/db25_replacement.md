@@ -161,9 +161,9 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
 | 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
 | 11 | `#2` pin 24 (`VCC`) | 4N26 #9 | Confirmed |
-| 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Corrects earlier "4N26 #2 / 005F" misattribution |
+| 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Confirmed |
 | 13 | — | — | GND |
-| 14 | — | — | VCC (corrects earlier GND misattribution) |
+| 14 | — | — | VCC |
 | 15 | — | — | GND |
 | 16 | — | — | VCC (DB25 connector pin — distinct from `P8243 #1` package pin 16 used for DB25 pin 22's opto chain, below) |
 | 17 | — (further trace TBD) | 4N26 #12 + #15 | Confirmed; 4N26 #12 pin 1 (LED anode) and 4N26 #15 pin 2 (LED cathode) — completes the anti-parallel LED pair with pin 4, see note |
