@@ -582,6 +582,46 @@ ever re-cropped, the marker coordinates in the `<script>` block need
 regenerating to match (they're pixel coordinates against that exact
 image).
 
+### `pic/bottom_pcb_both_sides_overlay.jpg` — both copper layers combined
+
+Both sides of the bottom PCB combined into one image: **green = component
+side, magenta = solder side**; where a trace exists on both layers at the
+same spot it reads white/bright. Built by manually matching ~9 physical
+reference points (mounting holes, the 25×30mm rectangular window, one
+mounting screw) between the two full-res photos, then fitting a
+polynomial warp of the solder-side photo into the component-side photo's
+pixel space. Each layer is then run through adaptive local contrast
+(CLAHE, to even out lighting so faint/shadowed traces aren't lost),
+thresholded to a trace-only mask (level stretch + sigmoidal contrast +
+a slight morphological close to reconnect broken segments), and
+composited as opaque colored lines onto a pale cream background matching
+the board's actual translucent fiberglass color — closer to how the bare
+board looks in hand than a raw photo blend, and traces read clearly and
+continuously instead of fighting substrate texture or fading out.
+
+**Alignment is approximate, not pixel-precise** — good near the reference
+points (roughly the board's center), drifting up to ~10-15px near the
+edges. This is a genuine limit of matching two independently hand-shot
+phone photos (differing lens/perspective distortion) via a handful of
+manually-picked points, not something a better transform formula fixes.
+Treat it as a rough visual aid for spotting which general area a trace
+lands in on the other layer — verify anything load-bearing with a
+multimeter, the same as everything else in this doc.
+
+Also tried: automated SIFT feature matching + RANSAC homography +
+thin-plate-spline warp (OpenCV/scipy), guided by the manual points as a
+prior to fight the board's repetitive-pattern false-match problem. It
+did not beat the manual result — this board's dense repeated chip/pad
+patterns defeat descriptor matching even with spatial guidance, and
+"good" correspondences kept turning out to be locally-consistent but
+still wrong. A real fix would need a fixed-camera rig (board flipped in
+place, camera untouched) rather than two independent handheld photos —
+worth doing if these photos are ever retaken.
+
+Not pixel-aligned with `bottom_pcb_component_side.jpg` or the interactive
+chip map — it's a separate crop/warp, built straight from the original
+full-resolution photos.
+
 ### `pic/bottom_pcb.jpg` — CPU board, solder/component side
 Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic
 windowed), the 40-pin 8035, several DIP logic ICs, a row of front-panel
