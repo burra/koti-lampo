@@ -533,10 +533,12 @@ same spot it reads white/bright. Built by manually matching ~9 physical
 reference points (mounting holes, the 25×30mm rectangular window, one
 mounting screw) between the two full-res photos, then fitting a
 polynomial warp of the solder-side photo into the component-side photo's
-pixel space, then combining both as grayscale into separate color
-channels with contrast/level stretching and unsharp masking applied to
-each layer first — makes the metallic traces pop against a near-black
-background instead of fighting the fiberglass substrate texture.
+pixel space. Each layer is then thresholded to a trace-only mask (level
+stretch + sigmoidal contrast) and composited as opaque colored lines onto
+a pale cream background matching the board's actual translucent
+fiberglass color — closer to how the bare board looks in hand than a
+raw photo blend, and the traces read clearly instead of fighting
+substrate texture.
 
 **Alignment is approximate, not pixel-precise** — good near the reference
 points (roughly the board's center), drifting up to ~10-15px near the
