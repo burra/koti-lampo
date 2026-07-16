@@ -161,9 +161,9 @@ plus the REF reference), the strobe/ready handshake pair, the actuator drives
 | 9 | `#2` pin 22 (`P52`) | 4N26 #11 | No firmware match found yet |
 | 10 | `#2` pin 23 (`P51`) | 4N26 #10 | No firmware match found yet |
 | 11 | `#2` pin 24 (`VCC`) | 4N26 #9 | Confirmed |
-| 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Corrects earlier "4N26 #2 / 005F" misattribution |
+| 12 | `#2` pin 21 (`P53`) | 4N26 #8 | Confirmed |
 | 13 | — | — | GND |
-| 14 | — | — | VCC (corrects earlier GND misattribution) |
+| 14 | — | — | VCC |
 | 15 | — | — | GND |
 | 16 | — | — | VCC (DB25 connector pin — distinct from `P8243 #1` package pin 16 used for DB25 pin 22's opto chain, below) |
 | 17 | — (further trace TBD) | 4N26 #12 + #15 | Confirmed; 4N26 #12 pin 1 (LED anode) and 4N26 #15 pin 2 (LED cathode) — completes the anti-parallel LED pair with pin 4, see note |
@@ -667,22 +667,17 @@ continuously instead of fighting substrate texture or fading out.
 
 **Alignment is approximate, not pixel-precise** — good near the reference
 points (roughly the board's center), drifting up to ~10-15px near the
-edges. This is a genuine limit of matching two independently hand-shot
-phone photos (differing lens/perspective distortion) via a handful of
-manually-picked points, not something a better transform formula fixes.
-Treat it as a rough visual aid for spotting which general area a trace
-lands in on the other layer — verify anything load-bearing with a
-multimeter, the same as everything else in this doc.
+edges, a genuine limit of aligning two independently hand-shot phone
+photos on a handful of manually-picked points. Treat it as a rough visual
+aid for spotting which general area a trace lands in on the other layer —
+verify anything load-bearing with a multimeter, the same as everything
+else in this doc.
 
-Also tried: automated SIFT feature matching + RANSAC homography +
-thin-plate-spline warp (OpenCV/scipy), guided by the manual points as a
-prior to fight the board's repetitive-pattern false-match problem. It
-did not beat the manual result — this board's dense repeated chip/pad
-patterns defeat descriptor matching even with spatial guidance, and
-"good" correspondences kept turning out to be locally-consistent but
-still wrong. A real fix would need a fixed-camera rig (board flipped in
-place, camera untouched) rather than two independent handheld photos —
-worth doing if these photos are ever retaken.
+Automated feature-matching alignment (SIFT/RANSAC/spline) isn't viable
+here — the board's dense repeated chip/pad patterns defeat descriptor
+matching. Getting this pixel-precise needs a fixed-camera rig (board
+flipped in place, camera untouched) rather than two independent handheld
+photos — worth doing if these photos are ever retaken.
 
 Not pixel-aligned with `bottom_pcb_component_side.jpg` or the interactive
 chip map — it's a separate crop/warp, built straight from the original
