@@ -241,15 +241,12 @@ resistor feeding an opto's LED cathode, work backward to the `P8243`/`P7`
 port bit for the firmware signal, and forward from the collector to the
 DB25 pin.
 
-**Correction — pin 12 and the real 4N26 count.** DB25 pin 12 was earlier
-misattributed to "4N26 #2 (marked 005F)". It's actually **4N26 #8**, LED
-anode side, continuing on to `P8243 #2` pin 21 (`P53`) — the same physical
-`P8243` package that also serves DB25 pins 10, 11, 19, 20, and 21 (exact
-package pins for 10/11/19/20 still TBD). Given the board turned out to
-carry 7 `P8243` packages rather than 2 (see multi-chip caveat below), the
-4N26 count is likely similarly larger than the "two" first assumed — treat
-any `4N26 #N` label in this doc as an id from continuity tracing, not a
-claim about total quantity on the board.
+**DB25 pin 12** traces to **4N26 #8**, LED anode side, continuing on to
+`P8243 #2` pin 21 (`P53`) — the same physical `P8243` package that also
+serves DB25 pins 10, 11, 19, 20, and 21 (exact package pins for 10/11/19/20
+still TBD). The board carries 7 `P8243` packages, not 2, so treat any
+`4N26 #N` label in this doc as an id from continuity tracing, not a claim
+about total quantity on the board.
 
 **Firmware match:** on the [P8243](../README.md#datasheets) 24-pin DIP, pin 16
 is **`P73`** — bit 3 (MSB) of Port 7 (`P70..P73` = pins 13-16). Bit `0x08` of
@@ -369,10 +366,9 @@ logical port space if both their `BUS` and `PROG` land on the same CPU
 pins — `CS'` wiring (or the lack of it) is what tells you whether that
 sharing needs arbitration.
 
-**`P8243 #2`'s connection to the CPU — corrected, and it's not the `BUS`.**
-Two rounds of correction on the original reading. Cross-checked against the
-Intel MCS-48 40-pin DIP pinout (pins 27-34 = `P10-P17`; pins 35-38 =
-`P24-P27`; pin 39 = `T1`; pin 40 = `Vcc`):
+**`P8243 #2`'s connection to the CPU is not the `BUS`.** Cross-checked
+against the Intel MCS-48 40-pin DIP pinout (pins 27-34 = `P10-P17`; pins
+35-38 = `P24-P27`; pin 39 = `T1`; pin 40 = `Vcc`):
 
 | `P8243` pin | `P8243` signal | CPU (8035) pin | CPU signal |
 | --- | --- | --- | --- |
@@ -381,18 +377,14 @@ Intel MCS-48 40-pin DIP pinout (pins 27-34 = `P10-P17`; pins 35-38 =
 | 10 | `P21` | 39 | `T1` |
 | 11 | `P20` | 40 | `Vcc` |
 
-Originally read as landing on CPU pins 17-20 (`D5-D7` + `GND`) — a plausible
-match to the standard 8243 `BUS` (`P20-P23` → the CPU's 8-bit data bus) that
-turned out to be wrong on re-measurement. The corrected landing (CPU pins
-37-40) is **not** the data bus at all — it's the CPU's own `P26`/`P27` (top
-two bits of the CPU's Port 2) and `T1`, plus the `Vcc` pull-up already noted
-for pin 11. That means this chip is **not wired per the standard 8243
-protocol** (command nibble + `PROG` clock over `P20-P23`) — it's instead
-tied directly to individual CPU port/timer pins. Combined with the earlier
-finding that `CS'` and `PROG` are both floating (see below), this points
-toward `P8243 #2` not actually being clocked as a conventional I/O-expander
-transaction at all; worth reconsidering what protocol (if any) is really in
-use here, rather than assuming standard 8243 operation.
+This is **not** the standard 8243 `BUS` (`P20-P23` → the CPU's 8-bit data
+bus) — it lands on the CPU's own `P26`/`P27` (top two bits of Port 2) and
+`T1`, plus a `Vcc` pull-up on pin 11. That means this chip is **not wired
+per the standard 8243 protocol** (command nibble + `PROG` clock over
+`P20-P23`) — it's tied directly to individual CPU port/timer pins.
+Combined with `CS'` and `PROG` both floating (see below), `P8243 #2` is
+likely not clocked as a conventional I/O-expander transaction at all; worth
+reconsidering what protocol (if any) is really in use here.
 
 **Major open question: `CS'` and `PROG` are confirmed floating (no trace
 found at all, either side of the board) on *both* `P8243 #1` and
@@ -409,9 +401,9 @@ Possible explanations, none yet confirmed:
 - **Probing miss.** A via carrying the signal to the opposite copper layer
   is easy to miss on a double-sided board — worth re-checking both sides
   before ruling this out.
-- **Wrong reference pin.** If package-pin counting was thrown off (e.g. by
-  the earlier `P8243`-vs-`2716`-EPROM mix-up risk already noted for pin
-  11), pins 6/7 might not be the ones actually being probed.
+- **Wrong reference pin.** Package-pin counting is easy to throw off on a
+  24-pin DIP with no silkscreen index — worth double-checking pins 6/7 are
+  the ones actually being probed.
 - **Non-standard usage.** Less likely, but possible: this design might not
   drive `PROG` per-chip in the conventional sense, e.g. a shared/free-
   running clock wired elsewhere that wasn't recognised as `PROG` during
@@ -439,17 +431,14 @@ of **7 resistors** sits directly between the opto row and this chip's
 leftmost pins — matching exactly the 7 DB25 pins already documented for
 this chip (9, 10, 11, 12, 19, 20, 21), one resistor per opto-driven line.
 
-**`P8243 #1` is not yet physically confirmed and needs re-checking.** It
-was assigned to DB25 pins 22-25 during early continuity tracing, before any
-photo-based physical identification existed. A later attempt to physically
-locate it landed on the `B0048`-marked chip near the round pots — but that
-chip is far (~1750px) from where pin 22's resistor was subsequently traced
-to (immediately right of the opto row, below `P8243 #2`, near a dense glue-
-logic cluster — `SN74LS138N`, `MC14012BAL`, `CD4025BCJ`, and four
-`MC14013BC` chips). A `P8243` chip physically consistent with *that*
-location has not yet been found in the photos; either it's just outside
-the frames captured so far, or the `B0048` identification for "`#1`" is
-wrong and needs correcting once re-measured at the board.
+**`P8243 #1` is not yet physically located.** It's assigned to DB25 pins
+22-25 by continuity, but no chip in the photos is confirmed to be it. The
+resistor for pin 22 traces to a location immediately right of the opto
+row, below `P8243 #2`, near a dense glue-logic cluster (`SN74LS138N`,
+`MC14012BAL`, `CD4025BCJ`, and four `MC14013BC` chips) — a `P8243`
+physically consistent with that location hasn't been found yet, either
+because it's outside the photographed frames or misidentified. Needs
+re-checking at the board.
 
 ### P8243 #2 → CPU connection
 
@@ -530,6 +519,89 @@ Route B is the path the project README already aims at ("replace with a differen
 cpu and motherboard" / "drop-in replacement in the cpu socket with e.g. an
 ESP32"). The only blocker is the physical pinout, which needs the meter.
 
+## Roadmap: DB25 pinout → working ESP32 drop-in replacement
+
+### Phase 0 — Characterization
+
+**Derivable from the disassembly and photos, no bench access required:**
+- `P7` (relay/valve/pump latch) idle state: `io_init()` @ X000d drives
+  `P7 = 0x00` at boot. `0` = de-energized, assuming the driver stage is
+  active-high — verify polarity against Phase 0's driver-stage checks
+  below.
+- Hard-fault/interlock line (pin 23 candidate, `P72`): firmware reads this
+  bit **high = fault**, locks the CPU in an infinite loop
+  (`read_timing_channel()` @ X01eb, `ext_interrupt()` @ X04ff). CPU-side
+  fail-safe polarity is idle = low, fault = high.
+- Fail-safe contract for the ESP32 (design requirement, fixed now, not a
+  measurement): on crash, reset, or brownout, every output defaults to
+  heat-off/valves-closed by hardware (pull-up/pull-down on the driver
+  stage), independent of firmware state.
+
+**Requires multimeter/scope at the board. Mains disconnected unless noted:**
+- DB25 pin ↔ signal mapping: continuity from each pin to CPU port pins,
+  driver transistors, transformer secondary, GND (table above).
+- Idle and active voltage level at the connector, per traced line.
+- Whether the backend enforces the hard-fault interlock independently of
+  the head unit, or depends on the head unit driving it correctly.
+- De-energized state at the relay/valve driver stage itself — confirm
+  `0` at the CPU pin actually reaches the relay coil de-energized, not
+  just at the CPU.
+- Scope, mains live, caution: contactor min on/off dwell, valve actuation
+  time, pulse-input frequency range (`VM`/`LVM`), energy-metering pulse
+  width (`AE`/`LE`).
+
+### Phase 1 — Hardware interface design
+- Preserve galvanic isolation — reuse the existing opto barrier philosophy
+  on every mains-crossing line; ESP32 ground never touches backend ground.
+- Level-shift 8035-era ~5V TTL to 3.3V ESP32 GPIO; no direct 5V on any pin.
+- 7m cable considerations: series resistors/RC filtering and Schmitt-trigger
+  inputs on pulse lines, TVS/clamp protection against transients from
+  nearby contactors.
+- Outputs must default safe when the ESP32 is unpowered (floating = off).
+- Independent hardware watchdog (external, not just the internal WDT) that
+  drops outputs to safe on a firmware hang.
+- A physical bypass/isolation point so the whole replacement can be
+  disconnected, with "heating off" as the recoverable failure mode.
+
+### Phase 2 — Firmware architecture
+- Model it as a state machine mirroring `disasm/koti_lampo.c`, not a
+  rewrite from scratch — one module owning the DB25 port-bit image,
+  updated atomically.
+- Carry the SURE/LIKELY/GUESS confidence tags into code comments; gate
+  GUESS-derived behavior behind flags so it's easy to correct after bench
+  observation.
+- Control loop replicating the original setpoint/setback logic; timing
+  constants in one config block.
+- Settings in NVS (clock, schedule, setpoints) with sane defaults on blank
+  flash, plus a migration/entry path (buttons or a wifi UI).
+- Watchdog-fed main loop; assert safe-output state on any fault before
+  halting.
+- Wifi/UI on a separate task that can never block the control loop.
+
+### Phase 3 — Validation (live residential system)
+- Bench rig first: simulate the backend with LEDs/relays + signal
+  generators for pulse inputs and PT100 emulation. Verify every DB25 line
+  against the Phase 0 table before it goes near the house.
+- Power-fault testing on the bench: yank power, brownout, reset mid-cycle —
+  confirm outputs go safe every time.
+- Parallel/instrumented run: log the original head unit's DB25 behavior
+  over real heating cycles (including a cold day), then diff the ESP32's
+  output against that recording.
+- Staged install with rollback: keep the original 8035 head unit intact
+  and swappable back in minutes; first live run attended, during mild
+  weather, with someone home.
+- Watch a full duty cycle (heat demand, setback transition, valve events)
+  before leaving it unattended.
+
+### Commonly underestimated
+- PT100 accuracy — small resistance errors shift setpoints; calibrate
+  against the original.
+- Contactor chatter from missing min-dwell/hysteresis.
+- Disassembly guesses that only surface under rare states (fault, boot,
+  schedule edges).
+- EEPROM semantics (wear, defaults, clock backup) quietly relied on by
+  the original.
+
 ## Photo annotations & measurement worksheet (Route B prerequisite)
 
 What is visible in each photo and the exact probing to do. Record results in the
@@ -546,22 +618,16 @@ silkscreen, so chips are referred to by **`<part>-<board><n>`**, e.g.
   15 `4N26` optoisolators on the bottom board are `4N26-B1`..`4N26-B15`,
   left-to-right along the row visible in the interactive chip map below).
 
-**Correction:** the row of black components running along the CPU's
-right side (previously mis-described here as a "relay bank") is not
-relays — it's a row of **front-panel pushbuttons**, mounted on this
-board but operated through the case from the top plate (the weekday /
-setback-time buttons etc. in the `LÄMPÖTILAN ALENNUSAJAT` matrix and
-similar). They wire into `P8243 #3`/`#4`, which aren't traced yet.
+The row of black components running along the CPU's right side is a row
+of **front-panel pushbuttons**, mounted on this board but operated through
+the case from the top plate (the weekday/setback-time buttons etc. in the
+`LÄMPÖTILAN ALENNUSAJAT` matrix and similar) — not relays. They wire into
+`P8243 #3`/`#4`, which aren't traced yet.
 
-**`P8243 #3`'s neighbours:** the two round "SEUFER"-branded components
-next to it (top-right corner of the board) are **rotary switches**
-(numbered/detented position switches), not trimmer potentiometers —
-consistent with `P8243` being digital I/O only (no ADC). Likely wired
-into `#3` alongside the button row; not traced yet.
-
-(A static labeled reference photo used to live here; superseded by the
-interactive chip map below, which covers every IC and stays easier to
-keep in sync.)
+**`P8243 #3`'s neighbours** are two round "SEUFER"-branded **rotary
+switches** (numbered/detented position switches), not trimmer
+potentiometers — consistent with `P8243` being digital I/O only (no ADC).
+Likely wired into `#3` alongside the button row; not traced yet.
 
 ### `docs/bottom_pcb_chip_map.html` — interactive chip map
 
