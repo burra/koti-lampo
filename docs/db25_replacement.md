@@ -529,12 +529,20 @@ image).
 
 Both sides of the bottom PCB combined into one image: **green = component
 side, magenta = solder side**; where a trace exists on both layers at the
-same spot it reads white/bright. Built by finding the same physical
-mounting holes (plus the 25×30mm rectangular window) on both full-res
-photos, solving a perspective transform to warp the solder-side photo
-into the component-side photo's pixel space, then combining both as
-grayscale into separate color channels. Useful for following a trace
-that changes layers via a via, without flipping between two photos.
+same spot it reads white/bright. Built by manually matching ~9 physical
+reference points (mounting holes, the 25×30mm rectangular window, one
+mounting screw) between the two full-res photos, then fitting a
+polynomial warp of the solder-side photo into the component-side photo's
+pixel space and combining both as grayscale into separate color channels.
+
+**Alignment is approximate, not pixel-precise** — good near the reference
+points (roughly the board's center), drifting up to ~10-15px near the
+edges. This is a genuine limit of matching two independently hand-shot
+phone photos (differing lens/perspective distortion) via a handful of
+manually-picked points, not something a better transform formula fixes.
+Treat it as a rough visual aid for spotting which general area a trace
+lands in on the other layer — verify anything load-bearing with a
+multimeter, the same as everything else in this doc.
 
 Not pixel-aligned with `bottom_pcb_component_side.jpg` or the interactive
 chip map — it's a separate crop/warp, built straight from the original
