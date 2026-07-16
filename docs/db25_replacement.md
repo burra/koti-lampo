@@ -521,22 +521,34 @@ ESP32"). The only blocker is the physical pinout, which needs the meter.
 
 ## Roadmap: DB25 pinout → working ESP32 drop-in replacement
 
-### Phase 0 — Finish characterization (before any hardware)
-- Complete the DB25 tracing; for every line record direction (head↔backend),
-  idle/active logic level, voltage, and whether it's opto-isolated. This
-  table is the hardware spec — nothing gets built until it's closed.
-- Nail the safety-critical lines first:
-  - The hard-fault/interlock line (pin 23 candidate, see above): confirm its
-    fail-safe polarity (does de-asserting it *stop* heating?) and whether
-    the backend enforces it independently of the head unit.
-  - Solenoid valve + contactor outputs: confirm de-energized = safe
-    (heat off) state.
-- Define the fail-safe contract: on ESP32 crash/reset/brownout/power loss,
-  all outputs must settle to "heat off / valves closed" **by hardware
-  default**, not by firmware writing a safe value.
-- Capture original timing on a scope where it matters: contactor min
-  on/off dwell, valve actuation time, pulse-input frequency range,
-  energy-metering pulse width.
+### Phase 0 — Characterization
+
+**Derivable from the disassembly and photos, no bench access required:**
+- `P7` (relay/valve/pump latch) idle state: `io_init()` @ X000d drives
+  `P7 = 0x00` at boot. `0` = de-energized, assuming the driver stage is
+  active-high — verify polarity against Phase 0's driver-stage checks
+  below.
+- Hard-fault/interlock line (pin 23 candidate, `P72`): firmware reads this
+  bit **high = fault**, locks the CPU in an infinite loop
+  (`read_timing_channel()` @ X01eb, `ext_interrupt()` @ X04ff). CPU-side
+  fail-safe polarity is idle = low, fault = high.
+- Fail-safe contract for the ESP32 (design requirement, fixed now, not a
+  measurement): on crash, reset, or brownout, every output defaults to
+  heat-off/valves-closed by hardware (pull-up/pull-down on the driver
+  stage), independent of firmware state.
+
+**Requires multimeter/scope at the board. Mains disconnected unless noted:**
+- DB25 pin ↔ signal mapping: continuity from each pin to CPU port pins,
+  driver transistors, transformer secondary, GND (table above).
+- Idle and active voltage level at the connector, per traced line.
+- Whether the backend enforces the hard-fault interlock independently of
+  the head unit, or depends on the head unit driving it correctly.
+- De-energized state at the relay/valve driver stage itself — confirm
+  `0` at the CPU pin actually reaches the relay coil de-energized, not
+  just at the CPU.
+- Scope, mains live, caution: contactor min on/off dwell, valve actuation
+  time, pulse-input frequency range (`VM`/`LVM`), energy-metering pulse
+  width (`AE`/`LE`).
 
 ### Phase 1 — Hardware interface design
 - Preserve galvanic isolation — reuse the existing opto barrier philosophy
