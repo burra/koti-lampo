@@ -551,6 +551,16 @@ Treat it as a rough visual aid for spotting which general area a trace
 lands in on the other layer — verify anything load-bearing with a
 multimeter, the same as everything else in this doc.
 
+Also tried: automated SIFT feature matching + RANSAC homography +
+thin-plate-spline warp (OpenCV/scipy), guided by the manual points as a
+prior to fight the board's repetitive-pattern false-match problem. It
+did not beat the manual result — this board's dense repeated chip/pad
+patterns defeat descriptor matching even with spatial guidance, and
+"good" correspondences kept turning out to be locally-consistent but
+still wrong. A real fix would need a fixed-camera rig (board flipped in
+place, camera untouched) rather than two independent handheld photos —
+worth doing if these photos are ever retaken.
+
 Not pixel-aligned with `bottom_pcb_component_side.jpg` or the interactive
 chip map — it's a separate crop/warp, built straight from the original
 full-resolution photos.
