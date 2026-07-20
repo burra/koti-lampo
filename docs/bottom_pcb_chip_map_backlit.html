@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bottom PCB — both-layers chip map (interactive)</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 1.25rem; background: #111; color: #eee; }
+  h1 { font-size: 1.05rem; margin: 0 0 .3rem; }
+  p.sub { margin: 0 0 1rem; font-size: .85rem; opacity: .8; max-width: 65em; }
+  .controls { display: flex; gap: 1.2rem; margin-bottom: 1rem; font-size: .85rem; flex-wrap: wrap; }
+  .controls label { display: flex; align-items: center; gap: .4em; cursor: pointer; user-select: none; }
+  .controls span.sw { display:inline-block; width:.9em; height:.9em; border-radius:50%; }
+  .wrap { overflow: auto; max-height: 85vh; border: 1px solid #444; border-radius: 6px; background: #000; position: relative; }
+  .wrap svg { display: block; }
+  .wrap img { display: block; width: 100%; height: auto; }
+  .dot { stroke: #000; stroke-width: 2; cursor: default; }
+  .lbl { font-size: 15px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; font-family: system-ui, sans-serif; }
+  .layer { transition: opacity .15s; }
+  .layer.hidden { display: none; }
+  .note { margin-top: .8rem; font-size: .8rem; opacity: .7; max-width: 65em; }
+</style>
+</head>
+<body>
+
+<h1>Bottom (CPU) board — both-layers interactive chip map</h1>
+<p class="sub">
+  Toggle categories on/off to isolate what you're tracing. Same IC markers
+  as <code>bottom_pcb_chip_map.html</code>, over a different base:
+  <code>pic/bottom_pcb_backlit_chipmap_base.jpg</code> — the backlit
+  both-copper-layers image (<span style="color:#c050c0">magenta = solder
+  side</span>, <span style="color:#40a040">green = component side</span>)
+  warped into this chip map's exact pixel frame, so a marker sits on the
+  same chip while you see <em>both</em> trace layers under it. Registration
+  (component photo → rig photo via SIFT, → backlit via the verified
+  chain) carries a few px of residual — good for seeing which layer a
+  trace runs on, not for pin-level certainty. Naming convention:
+  <code>&lt;part&gt;-&lt;board&gt;&lt;n&gt;</code>, board <code>B</code> =
+  bottom/CPU board, <code>T</code> = top/front-panel board.
+</p>
+
+<div class="controls" id="controls"></div>
+
+<div class="wrap">
+  <svg id="overlay" viewBox="0 60 1600 648" xmlns="http://www.w3.org/2000/svg" style="position:absolute; top:0; left:0; width:100%; height:auto;">
+    <g class="layer" data-layer="opto">
+      <!-- 4N26-B1..15 -->
+    </g>
+    <g class="layer" data-layer="p8243">
+      <!-- P8243-B1, P8243-B2 -->
+    </g>
+    <g class="layer" data-layer="glue">
+      <!-- CD4093BFX-B1 (C1), MC14013BC-B1 (D1) -->
+    </g>
+    <g class="layer" data-layer="cpu">
+      <!-- P8035L CPU -->
+    </g>
+    <g class="layer" data-layer="eprom">
+      <!-- 2716 EPROMs -->
+    </g>
+    <g class="layer" data-layer="counters">
+      <!-- MC14040BA x2 -->
+    </g>
+    <g class="layer" data-layer="decoders">
+      <!-- SN74LS138N, SN74LS139N -->
+    </g>
+    <g class="layer" data-layer="gates">
+      <!-- MC14012BAL, CD4025BCJ, CD4023BF, ECD4011BE x2 -->
+    </g>
+    <g class="layer" data-layer="analog">
+      <!-- HEF4066AE x2, LM239J -->
+    </g>
+    <g class="layer" data-layer="keypad">
+      <!-- MC14518BAL x6, MC14508BCL x2 -->
+    </g>
+    <g class="layer" data-layer="memio">
+      <!-- P8212, MCM51L01P45 x2 -->
+    </g>
+    <g class="layer" data-layer="regulator">
+      <!-- LM7804 -->
+    </g>
+    <g class="layer" data-layer="connectors">
+      <!-- X2 flat-cable header -->
+    </g>
+  </svg>
+  <img src="../pic/bottom_pcb_backlit_chipmap_base.jpg" alt="Bottom PCB both copper layers (backlit), chip-map frame">
+</div>
+
+<p class="note">
+  Open questions still tracked in <code>db25_replacement.md</code>: <code>P8243-B1</code>'s
+  identity needs re-confirming at the board. <code>P3</code>/<code>P4</code> are the two
+  previously-unindexed <code>P8243</code> packages (near the top-right pots and the
+  front-panel button row) — positions marked but not yet traced. The black
+  row along the CPU's right side is <strong>front-panel pushbuttons</strong>
+  (weekday/setback buttons etc., operated from the top plate), not relays —
+  wired into <code>P3</code>/<code>P4</code>. Passive/mechanical parts
+  (resonator, trimmer pots, rotary switches, discretes) aren't marked —
+  only ICs.
+</p>
+
+<script>
+const LAYERS = {
+  opto:   { color: '#ff3b30', label: '4N26 optoisolator (1-15)', points: [
+    [121.5,120.6,'1'],[169.1,120.6,'2'],[216.7,120.7,'3'],[264.2,120.6,'4'],
+    [311.9,120.6,'5'],[359.5,120.7,'6'],[407.0,120.7,'7'],[454.7,120.7,'8'],
+    [502.2,120.7,'9'],[549.9,120.6,'10'],[597.4,120.6,'11'],
+    [164.3,227.9,'12'],[205.3,227.8,'13'],[246.4,227.8,'14'],
+    [209.1,284.2,'15'],
+  ]},
+  p8243:  { color: '#0047ff', label: 'P8243 I/O expander (#1-#4)', points: [
+    [808.8,123.7,'P2'],[1331.3,349.7,'P1'],
+    [1333,117,'P3'],[1517,571,'P4'],
+  ]},
+  glue:   { color: null, label: 'Glue logic: CD4093BFX (C) / MC14013BC (D)', points: [
+    [351.7,220.5,'C1', '#ffa500'],
+    [1172.5,351.7,'D1', '#008080'],
+    [167,387,'C2', '#ffa500'],
+    [190,457,'C3', '#ffa500'],
+    [290,387,'D2', '#008080'],
+    [1067,173,'D3', '#008080'],
+    [1183,170,'D4', '#008080'],
+    [1067,359,'D5', '#008080'],
+  ]},
+  cpu:    { color: '#800080', label: 'P8035L CPU', points: [
+    [627.3,438.9,'CPU'],
+  ]},
+  eprom:  { color: '#008000', label: '2716 EPROM (A98EH, 3EF2H)', points: [
+    [805.6,581.7,'A98EH'],[1014.0,581.6,'3EF2H'],
+  ]},
+  counters: { color: '#ffeb3b', label: 'MC14040BA counter', points: [
+    [667,233,'1'],[667,287,'2'],
+  ]},
+  decoders: { color: '#00bcd4', label: 'Decoders (SN74LS138N / 139N)', points: [
+    [950,177,'138'],[543,323,'139'],
+  ]},
+  gates: { color: '#e91e63', label: 'Gates (4012/4025/4023/ECD4011)', points: [
+    [1067,263,'4012'],[917,359,'4025'],[433,384,'4023'],
+    [543,253,'e1'],[190,584,'e2'],
+  ]},
+  analog: { color: '#8bc34a', label: 'Analog (HEF4066AE / LM239J)', points: [
+    [316,333,'66-1'],[430,323,'66-2'],[440,253,'239'],
+  ]},
+  keypad: { color: '#3f51b5', label: 'MC14518BAL / MC14508BCL', points: [
+    [83,457,'K1'],[83,517,'K2'],[83,584,'K3'],[83,647,'K4'],
+    [190,517,'K5'],[190,647,'K6'],
+    [417,471,'S1'],[417,597,'S2'],
+  ]},
+  memio: { color: '#607d8b', label: 'P8212 / MCM51L01P45', points: [
+    [617,581,'8212'],[1160,581,'101-1'],[1355,577,'101-2'],
+  ]},
+  regulator: { color: '#ff5722', label: 'LM7804 voltage regulator', points: [
+    [502,190,'7804'],
+  ]},
+  connectors: { color: '#f5f5f5', label: 'Flat-cable header (X2, to other PCB)', points: [
+    [1093,101,'X2'],
+  ]},
+};
+
+const svgns = 'http://www.w3.org/2000/svg';
+const controls = document.getElementById('controls');
+
+for (const [key, def] of Object.entries(LAYERS)) {
+  const g = document.querySelector(`g[data-layer="${key}"]`);
+  for (const pt of def.points) {
+    const [x, y, label, colorOverride] = pt;
+    const color = colorOverride || def.color;
+    const r = (label.length > 2) ? 22 : 14;
+    const circle = document.createElementNS(svgns, 'circle');
+    circle.setAttribute('cx', x);
+    circle.setAttribute('cy', y);
+    circle.setAttribute('r', r);
+    circle.setAttribute('fill', color);
+    circle.setAttribute('class', 'dot');
+    g.appendChild(circle);
+    const text = document.createElementNS(svgns, 'text');
+    text.setAttribute('x', x);
+    text.setAttribute('y', y);
+    text.setAttribute('class', 'lbl');
+    text.style.fontSize = (label.length > 2 ? 11 : 13) + 'px';
+    text.textContent = label;
+    g.appendChild(text);
+  }
+
+  const swatchColor = def.color || def.points[0][3];
+  const lbl = document.createElement('label');
+  lbl.innerHTML = `<input type="checkbox" checked data-layer="${key}"><span class="sw" style="background:${swatchColor}"></span>${def.label}`;
+  controls.appendChild(lbl);
+}
+
+controls.addEventListener('change', (e) => {
+  const cb = e.target;
+  if (cb.dataset.layer) {
+    document.querySelector(`g[data-layer="${cb.dataset.layer}"]`).classList.toggle('hidden', !cb.checked);
+  }
+});
+</script>
+
+</body>
+</html>
