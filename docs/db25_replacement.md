@@ -746,6 +746,19 @@ ever re-cropped, the marker coordinates in the `<script>` block need
 regenerating to match (they're pixel coordinates against that exact
 image).
 
+### `docs/bottom_pcb_chip_map_backlit.html` — same chip map, both-layers base
+
+Identical IC markers to the map above, but drawn over
+`pic/bottom_pcb_backlit_chipmap_base.jpg` instead of the plain component
+photo — the backlit both-copper-layers image (magenta = solder, green =
+component) warped into this chip map's exact pixel frame. So each marker
+still sits on its chip, but you see *both* trace layers running under it,
+useful for following a pin's net across to the solder side. The warp is
+registered (component photo → rig photo by SIFT, → backlit by the
+verified NCC chain) to a few px; treat it as layer-level guidance, not
+pin-level truth. Regenerate the base with the same registration chain if
+either source image changes.
+
 ### `pic/bottom_pcb_backlit.jpg` — both copper layers in one backlit exposure
 
 The board suspended by its corner screws and photographed against a
