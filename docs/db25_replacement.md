@@ -464,6 +464,104 @@ own; the useful next check is the decoder's **select inputs** (`A0-A2`,
 package pins 1-3) and **outputs** (`Y0-Y7`, pins 7/9-15) — whichever output
 is active would identify which chip(s) it's selecting.
 
+### Cross-check: probed pinout vs. required link signals
+
+Systematic comparison of the 25-pin probe table against the authoritative
+test-box signal list and the firmware map. Confidence tags as elsewhere in
+this doc.
+
+**Signal budget balances.** Excluding power (VCC ×4, GND ×5) and pin 7
+(NC), the probed connector carries **14 distinct signal channels** (pins
+4+17 form one anti-parallel pair; pin 11 counted pending the direction
+recheck below). The test-box list requires: 4 actuator drives (`VA`, `VH`,
+`PAK I`, `PAK II`), 3 status/meter outputs (`LL`, `LE`, `AE`), a sensor
+step code (test-box LEDs `A1..A4` = 4 bits), the measurement handshake
+(strobe + ready), 2 flow-pulse inputs (`VM`, `LVM` — the latter marked
+"not in use" in `IO list.ods`), and a timebase/zero-cross reference.
+That's 13-15 channels depending on encoding — the probed count fits, with
+no room for an analog pair (see below).
+
+**No analog line crosses the connector — measurement must be
+time-encoded.** Every probed signal pin runs through a 4N26 optoisolator,
+which cannot pass an analog resistance reading. So the AVM card must
+convert resistance to a time/frequency quantity backend-side, with the CPU
+measuring duration — exactly what the disassembly's
+`read_timing_channel()` (@ `X01eb`) has been named for all along, and
+consistent with the sequential one-channel-at-a-time measurement the test
+box displays. LIKELY.
+
+**Pins 4/17 (anti-parallel pair) = mains/AC timebase reference.** An
+anti-parallel LED pair conducts alternately on each AC half-cycle — the
+classic opto zero-cross detector. `4N26 #12`'s collector feeds a
+`CD4093BFX` Schmitt NAND (edge squaring), and the firmware map already
+attributes the `INT` line to mains zero-cross divided by the `MC14040B`
+counter and gated by `MC14013B` flip-flops. Chain shape, part inventory,
+and firmware expectation all line up: this pair is the plant-side AC
+reference feeding the interrupt/clock timebase. LIKELY (scope
+confirmation per the measurement checklist below).
+
+**Pins 25 + 10 + 9 + 12 = `P50..P53` — matches the 4-bit step code
+`A1..A4`.** The four probed `P5x` bits complete a full nibble: `P50`
+(pin 25), `P51` (pin 10), `P52` (pin 9), `P53` (pin 12). The test box
+shows the measurement step on exactly four LEDs. Reading: the CPU drives
+the sensor-select step code across the link, the backend AVM connects the
+addressed sensor, and the `regulation_pass()` `or_p5(0x01)` previously
+read as a "companion latch" for pin 22's pulse is more plausibly the
+step-advance/start bit of this code. GUESS→LIKELY, with one hard caveat:
+`P50` sits on package `#1` while `P51-P53` sit on `#2`, so a *single*
+port-5 write can only set all four if both packages respond to the same
+logical port transaction — which the floating-`CS'`/`PROG` anomaly leaves
+unresolved. If the packages are truly independent, `A1..A4` is more
+likely `P51-P53` plus one bit from elsewhere, and pin 25 keeps its
+original companion-latch reading.
+
+**Pins 19/20/21 (`P61`/`P62`/`P63`) = actuator drives, not buttons.** The
+code matches (`btn_clock_adjust()`, `btn_mode()`, front-panel button
+handlers) were already flagged as architecturally odd for backend pins.
+The multi-package finding supplies the missing explanation: the button
+code most likely addresses a *front-panel* package's port 6, while these
+DB25 pins belong to a CPU-board package with the same logical port name —
+the disassembly cannot tell the two apart. Architecturally, three
+adjacent outbound opto-driven `P6x` bits next to the `P5x` step nibble
+fit the actuator drive group (`VA`, `VH`, `PAK I`/`PAK II`) far better.
+The fourth drive would be `P60` (package pin 20) — not found on any DB25
+pin yet, worth a dedicated continuity check. GUESS, falsifiable at the
+board: drive a heat call and meter pins 19/20/21 for level changes.
+
+**Pins 5/6 (dedicated inbound optos) = flow pulses and/or measurement
+ready.** Both have their LED side on the DB25 (backend drives them
+inbound). Inbound candidates from the test box: `VM` flow pulses, `LVM`
+(unused per `IO list.ods`), and the measurement ready/busy line the
+firmware polls on `P1.4`. Two pins, three candidates, one marked unused —
+the tidy fit is `VM` + ready. Tracing #13/#14's collectors settles it:
+landing on CPU `P1.4` means handshake, landing on the counter/flip-flop
+chain means flow pulse. GUESS.
+
+**Pin 22 (`P73`, pulsed) = `LE` or `AE` energy pulse.** Already matched;
+the test box confirms both pulse outputs cross the link ("blink once per
+kWh"), and a firmware-pulsed bit fits them and not the level-held valve
+drives. The other of the pair should be a second pulsed output — not yet
+identified; `LL` (aux-heat status) also still needs a pin. LIKELY for
+"one of LE/AE"; the specific one is undetermined.
+
+**Pin 23 (`P72`, read, fault-hang) = hardware interlock.** No test-box
+LED corresponds — consistent with a hard safety line that the test box
+passes straight through rather than displays. Stands as documented.
+
+**Pin 11 — direction recheck needed.** Probed as "through `4N26 #9` to
+`P8243 #2` pin 24 (`VCC`)". A trace ending at a package's VCC pin most
+plausibly means the opto's *LED anode rail* was reached — in which case
+the DB25 side is the cathode, the backend lights the LED by sinking
+current, the signal is **inbound**, and its actual destination is `#9`'s
+untraced collector, not the VCC pin. As probed, "confirmed VCC" may
+mislabel a live inbound channel. Recheck at the board.
+
+**Unlocated on the DB25 side:** the outbound measurement strobe (`P1.5`
+in the firmware map — no probed pin has an outbound path from CPU port 1),
+the 4th actuator drive, the second energy-pulse output, and `LL`. Either
+some share pins via the step-code encoding, or they hide among the
+untraced collectors (pins 5/6/4/17 chains) and the pin-11 recheck.
+
 ### Backend terminal map — TO BE MEASURED
 
 Sensor types are no longer a question: `IO list.ods` confirms **all six
@@ -648,40 +746,38 @@ ever re-cropped, the marker coordinates in the `<script>` block need
 regenerating to match (they're pixel coordinates against that exact
 image).
 
-### `pic/bottom_pcb_both_sides_overlay.jpg` — both copper layers combined
+### `pic/bottom_pcb_backlit.jpg` — both copper layers in one backlit exposure
 
-Both sides of the bottom PCB combined into one image: **green = component
-side, magenta = solder side**; where a trace exists on both layers at the
-same spot it reads white/bright. Built by manually matching ~9 physical
-reference points (mounting holes, the 25×30mm rectangular window, one
-mounting screw) between the two full-res photos, then fitting a
-polynomial warp of the solder-side photo into the component-side photo's
-pixel space. Each layer is then run through adaptive local contrast
-(CLAHE, to even out lighting so faint/shadowed traces aren't lost),
-thresholded to a trace-only mask (level stretch + sigmoidal contrast +
-a slight morphological close to reconnect broken segments), and
-composited as opaque colored lines onto a pale cream background matching
-the board's actual translucent fiberglass color — closer to how the bare
-board looks in hand than a raw photo blend, and traces read clearly and
-continuously instead of fighting substrate texture or fading out.
+The board suspended by its corner screws and photographed against a
+bright light: the translucent fiberglass lets **both copper layers show
+in a single photo** — the solder-side traces read as crisp silver lines,
+the component-side layer shows through the substrate as softer dark
+lines, and IC bodies as gray rectangles. Because it's one exposure, the
+two layers are perfectly registered by physics — no alignment step, no
+residual error. **Prefer this image for following a trace from one layer
+to the other**; the color-coded companion
+(`bottom_pcb_backlit_layers.jpg`) tints the two layers, but its colors
+carry a small classification error this untinted version doesn't.
+Processed from the raw shot only by deskew, crop, and illumination
+flattening (divide by Gaussian background + CLAHE).
 
-**Alignment is approximate, not pixel-precise** — good near the reference
-points (roughly the board's center), drifting up to ~10-15px near the
-edges, a genuine limit of aligning two independently hand-shot phone
-photos on a handful of manually-picked points. Treat it as a rough visual
-aid for spotting which general area a trace lands in on the other layer —
-verify anything load-bearing with a multimeter, the same as everything
-else in this doc.
+### `pic/bottom_pcb_backlit_layers.jpg` — backlit photo with layers color-coded
 
-Automated feature-matching alignment (SIFT/RANSAC/spline) isn't viable
-here — the board's dense repeated chip/pad patterns defeat descriptor
-matching. Getting this pixel-precise needs a fixed-camera rig (board
-flipped in place, camera untouched) rather than two independent handheld
-photos — worth doing if these photos are ever retaken.
-
-Not pixel-aligned with `bottom_pcb_component_side.jpg` or the interactive
-chip map — it's a separate crop/warp, built straight from the original
-full-resolution photos.
+The same backlit photo with the two copper layers tinted: **magenta =
+solder side, green = component side, gray = unclassified**. The
+classification is grounded in the two single-side rig photos rather than
+image heuristics: their trace
+masks are registered onto the backlit image (seeded by the pad-cutout
+window corners, refined by windowed NCC matching between the solder mask
+and the backlit trace lines, ~3px mean residual over the matched grid),
+and each backlit trace pixel is colored by which side's photo actually
+contains copper there. Where both photos show copper at the same spot
+(through-holes, genuine overlaps), edge sharpness breaks the tie —
+near-side (solder) traces image crisply, far-side ones are diffused by
+the fiberglass. **Trace positions are exact (single exposure); the layer
+colors inherit the side-photo registration error (~10-20px)**, so at
+dense crossings confirm against the untinted backlit photo before acting
+on a color.
 
 ### `pic/bottom_pcb.jpg` — CPU board, solder/component side
 Visible: the **DB25 D-sub on the left edge**, the two EPROMs (centre, ceramic
