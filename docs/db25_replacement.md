@@ -37,6 +37,17 @@ Analog measurement & setpoints almost certainly route to the backend **X10
 (AVM2)** and **X11 (AVO2)** cards rather than to an on-board ADC; the head unit
 appears to deal in digital strobes + a busy/ready handshake.
 
+**Confirmed by running the firmware** ([`../emu/`](../emu/)). Emulating the real
+ROM shows the measurement sequence at `X01F4`: assert the `P1.5` strobe
+(`orl p1,#20h`), delay ~65536 loop iterations, then **`strt cnt`** — starting the
+8035's event counter on the **`T1`** pin. So a sensor reading is *strobe → wait →
+count edges on `T1`*: **pulse/event-count encoded, not analog and not
+pulse-width**. This independently corroborates the "no analog crosses the DB25"
+finding in the cross-check below, and it fixes what Route B must reproduce — a
+strobe output plus an edge counter with a matching gate window, rather than an
+ADC input. The count-to-temperature scaling is still unknown (emulation cannot
+supply it; it needs either a synthetic `T1` pulse train or a live capture).
+
 ### Confirmation from the board block diagram (`Display blockschema.odg`)
 
 The hardware block schema corroborates the firmware-derived map (see the

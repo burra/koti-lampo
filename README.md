@@ -18,8 +18,11 @@ Confirmed working:
   **28C16** EEPROM — a working drop-in replacement for the now-scarce B2716-6.
   This means a failed EPROM no longer blocks keeping the system running.
 
-Still open (see [Hypothesis](#hypothesis) below): the DB25 pinout, a redrawn
-schematic/PCB, and an ESP32-based CPU replacement.
+All 25 DB25 pins are now identified by continuity (see
+[`docs/db25_replacement.md`](docs/db25_replacement.md)), and the firmware
+reconstruction is now testable by running the real ROM under
+[`emu/`](emu/). Still open: a redrawn schematic/PCB, decoding the backend
+AVM2 card's measurement protocol, and an ESP32-based replacement.
 
 
 ## Hypothesis
@@ -49,6 +52,7 @@ point (where they disagree, one is wrong):
 | [`disasm/`](disasm/) | per-bank assembly (`*.d48`) + a **hand-written** annotated C reconstruction ([`koti_lampo.c`](disasm/koti_lampo.c)) | `d48` disassembler + human analysis |
 | [`ghidra/`](ghidra/) | Ghidra tooling + **machine-generated** decompiler C output in [`ghidra/out/`](ghidra/out/) | Ghidra headless (`run_ghidra.sh`) |
 | [`docs/`](docs/) | English translations, the DB25 pinout, and the reimplementation spec | transcription + analysis |
+| [`emu/`](emu/) | MCS-48 emulator that **runs the real ROM** to test the reconstruction's claims | hand-written; decoder proven against `d48` |
 
 So `disasm/koti_lampo.c` is "what a human concluded the code does" and
 `ghidra/out/combined_4k.ghidra.c` is "what an automated decompiler independently
