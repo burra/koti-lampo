@@ -592,6 +592,11 @@ is the *pinout* — which DB25 pin each lands on — not the sensor technology.
    each sensor line to its DB25 pin.
 4. With mains on **and** appropriate caution, scope the `INT` candidate pin to
    confirm 50 Hz zero-cross, and the `P1.4` pin for the busy/ready handshake.
+5. For the remaining open questions (the AVM2 measurement scaling, the
+   `P6`/`P7` handshake payload, and the still-unresolved pins) a one-off scope
+   check isn't enough — see
+   [`db25_capture_checklist.md`](db25_capture_checklist.md) for a passive
+   logic-analyzer capture procedure targeting exactly those signals.
 
 ## Replacement options
 
