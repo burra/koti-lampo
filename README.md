@@ -30,7 +30,12 @@ schematic/PCB, and an ESP32-based CPU replacement.
 * Make pinout diagram of the DB25 connector on the back to make it possible to replace with a total different cpu and motherboard 
 * Draw Schema/PCB in order to be able to make a new PCB if the old ones can't be repaired any more 
 * Create drop in replacement in the cpu socket with e.g and ESP32
-  
+
+For a modern rebuild, the consolidated control-logic specification (inputs,
+thresholds, formulas, fault rules, cross-referenced to the manuals and the
+firmware reconstruction) lives in
+[`docs/reimplementation_spec.md`](docs/reimplementation_spec.md).
+
 
 ## Repository layout
 
